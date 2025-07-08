@@ -82,8 +82,6 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
                 "instantiate_vm",
                 {"template_id": "0", "vm_name": "test-manage-vm"},
             )
-            print("inst_out")
-            print(inst_out)
             inst_xml = inst_out.content[0].text
 
             vm_id = get_vm_id(inst_xml)

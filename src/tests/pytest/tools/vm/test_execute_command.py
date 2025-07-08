@@ -45,7 +45,7 @@ async def test_execute_command_with_invalid_vm_ip_address(mcp_server):
         )
 
         # The result should contain an error
-        assert len(result) == 1
+        assert len(result.content) == 1
         output = result.content[0].text
 
         assert "<error><message>Invalid IP address</message></error>" in output
@@ -60,7 +60,7 @@ async def test_execute_command_basic_system_info(mcp_server, test_vm_ip):
             "execute_command", {"vm_ip_address": test_vm_ip, "command": "whoami"}
         )
 
-        assert len(result) == 1
+        assert len(result.content) == 1
         output = result.content[0].text
         assert "<error>" not in output
         assert "root" in output
@@ -74,7 +74,7 @@ async def test_execute_command_filesystem_root_access(mcp_server, test_vm_ip):
             "execute_command", {"vm_ip_address": test_vm_ip, "command": "ls -1 /"}
         )
 
-        assert len(result) == 1
+        assert len(result.content) == 1
         output = result.content[0].text
         assert "<error>" not in output
 
@@ -102,7 +102,7 @@ async def test_execute_command_file_write_read_cycle(mcp_server, test_vm_ip):
             },
         )
 
-        assert len(write_result) == 1
+        assert len(write_result.content) == 1
         write_output = write_result.content[0].text
         assert "<error>" not in write_output, "Failed to write test file"
 
@@ -112,7 +112,7 @@ async def test_execute_command_file_write_read_cycle(mcp_server, test_vm_ip):
             {"vm_ip_address": test_vm_ip, "command": f"cat {test_file}"},
         )
 
-        assert len(read_result) == 1
+        assert len(read_result.content) == 1
         read_output = read_result.content[0].text
         assert "<error>" not in read_output, "Failed to read test file"
         assert test_content in read_output, (
@@ -125,7 +125,7 @@ async def test_execute_command_file_write_read_cycle(mcp_server, test_vm_ip):
             {"vm_ip_address": test_vm_ip, "command": f"rm -f {test_file}"},
         )
 
-        assert len(cleanup_result) == 1
+        assert len(cleanup_result.content) == 1
         cleanup_output = cleanup_result.content[0].text
         assert "<error>" not in cleanup_output, "Failed to cleanup test file"
 
@@ -143,7 +143,7 @@ async def test_execute_command_with_pipes_and_complex_logic(mcp_server, test_vm_
             },
         )
 
-        assert len(result) == 1
+        assert len(result.content) == 1
         output = result.content[0].text
 
         assert "hello world test" in output, "Should contain the full echoed string"

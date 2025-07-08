@@ -31,7 +31,9 @@ _logging_configured = False
 
 
 def setup_logging(
-    level: Optional[str] = None, enable_file_logging: bool = True
+    level: Optional[str] = None, 
+    enable_file_logging: bool = True,
+    log_subdirectory: Optional[str] = None
 ) -> None:
     """Configure logging for the OpenNebula MCP server.
 
@@ -43,6 +45,8 @@ def setup_logging(
                If None, uses LOG_LEVEL environment variable or defaults to INFO.
         enable_file_logging: If True, enables file logging with automatic timestamped
                            filename in ./log directory (created if doesn't exist).
+        log_subdirectory: Optional subdirectory within ./log for organizing logs
+                         (e.g., "tests" for test logs). If None, logs go directly in ./log.
 
     Note:
         This function should be called only once at application startup.
@@ -75,7 +79,7 @@ def setup_logging(
 
     # Add file handler if file logging is enabled
     if enable_file_logging:
-        log_file_path = _generate_log_file_path()
+        log_file_path = _generate_log_file_path(log_subdirectory)
         _add_file_handler(root_logger, log_file_path, effective_level, formatter)
 
     # Prevent propagation to avoid duplicate messages
@@ -85,12 +89,18 @@ def setup_logging(
     _logging_configured = True
 
 
-def _generate_log_file_path() -> str:
+def _generate_log_file_path(subdirectory: Optional[str] = None) -> str:
     """Generate timestamped log file path in repository's log directory.
 
-    Creates a log file path with format: <repo_root>/log/YYYY_MM_DD_HH_MM_SS.log
-    The log directory is created if it doesn't exist, always relative to the
+    Creates a log file path with format: 
+    - <repo_root>/log/YYYY_MM_DD_HH_MM_SS.log (if no subdirectory)
+    - <repo_root>/log/<subdirectory>/YYYY_MM_DD_HH_MM_SS.log (if subdirectory provided)
+    
+    The log directory (and subdirectory) is created if it doesn't exist, always relative to the
     repository root regardless of current working directory.
+
+    Args:
+        subdirectory: Optional subdirectory within the log directory for organizing logs
 
     Returns:
         str: Full path to the log file
@@ -101,7 +111,9 @@ def _generate_log_file_path() -> str:
 
     # Create log directory relative to repository root
     log_dir = repo_root / "log"
-    log_dir.mkdir(exist_ok=True)
+    if subdirectory:
+        log_dir = log_dir / subdirectory
+    log_dir.mkdir(parents=True, exist_ok=True)
 
     # Generate timestamp-based filename
     timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")

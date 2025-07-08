@@ -22,12 +22,12 @@ from src.logging_config import setup_logging, reset_logging_config
 
 
 def cleanup_logs():
-    """Clean up test log files."""
-    log_dir = Path("log")
-    if log_dir.exists():
+    """Clean up test log files from the tests subdirectory only."""
+    test_log_dir = Path("log") / "tests"
+    if test_log_dir.exists():
         import shutil
 
-        shutil.rmtree(log_dir)
+        shutil.rmtree(test_log_dir)
 
 
 @pytest.fixture(autouse=True)
@@ -42,7 +42,7 @@ def reset_logging_state():
 
 def test_basic_setup():
     """Test logging setup works without crashing."""
-    setup_logging()
+    setup_logging(log_subdirectory="tests")
     logger = logging.getLogger("opennebula_mcp")
 
     assert logger.level == logging.INFO
@@ -53,37 +53,37 @@ def test_basic_setup():
 def test_file_logging_toggle():
     """Test file logging enable/disable."""
     # Test enabled (default behavior now)
-    setup_logging(enable_file_logging=True)
+    setup_logging(enable_file_logging=True, log_subdirectory="tests")
     assert len(logging.getLogger("opennebula_mcp").handlers) == 2  # Console + file
-    assert Path("log").exists()
+    assert Path("log/tests").exists()
 
     reset_logging_config()
 
     # Test disabled (explicit --no-log-file)
-    setup_logging(enable_file_logging=False)
+    setup_logging(enable_file_logging=False, log_subdirectory="tests")
     assert len(logging.getLogger("opennebula_mcp").handlers) == 1  # Console only
 
 
 def test_log_levels():
     """Test different log levels work."""
-    setup_logging(level="DEBUG")
+    setup_logging(level="DEBUG", log_subdirectory="tests")
     assert logging.getLogger("opennebula_mcp").level == logging.DEBUG
 
     reset_logging_config()
 
-    setup_logging(level="ERROR")
+    setup_logging(level="ERROR", log_subdirectory="tests")
     assert logging.getLogger("opennebula_mcp").level == logging.ERROR
 
 
 def test_file_content():
     """Test that logs actually write to file with correct content."""
-    setup_logging(level="INFO", enable_file_logging=True)
+    setup_logging(level="INFO", enable_file_logging=True, log_subdirectory="tests")
 
     logger = logging.getLogger("opennebula_mcp.test")
     logger.info("Test message")
 
     # Find log file and verify content
-    log_files = list(Path("log").glob("*.log"))
+    log_files = list(Path("log/tests").glob("*.log"))
     assert len(log_files) == 1
 
     content = log_files[0].read_text()
