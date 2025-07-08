@@ -1,0 +1,44 @@
+# Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Test if the AI can answer questions about the clusters using the MCP tools and therefore can understand the XML format of the clusters
+
+- vars:
+    input: "How many clusters are in this XML: <CLUSTER_POOL><CLUSTER><ID>0</ID><NAME>default</NAME></CLUSTER><CLUSTER><ID>1</ID><NAME>production</NAME></CLUSTER></CLUSTER_POOL>"
+  assert:
+    - type: contains
+      value: "2"
+
+- vars:
+    input: "What is the name of cluster with ID 0 from this XML: <CLUSTER_POOL><CLUSTER><ID>0</ID><NAME>default</NAME><HOSTS><ID>0</ID></HOSTS></CLUSTER></CLUSTER_POOL>"
+  assert:
+    - type: contains
+      value: "default"
+
+- vars:
+    input: "You MUST not call any tools. Given this XML, how many datastores are assigned to the default cluster? <CLUSTER_POOL><CLUSTER><ID>0</ID><NAME>default</NAME><DATASTORES><ID>0</ID><ID>1</ID><ID>2</ID></DATASTORES></CLUSTER></CLUSTER_POOL>"
+  assert:
+      - type: assert-set
+        threshold: 0.5
+        assert:
+          - type: contains
+            value: "3"
+          - type: icontains
+            value: "three"
+
+- vars:
+    input: "Consider the following XML: <CLUSTER_POOL><CLUSTER><NAME>default</NAME><VNETS><ID>101</ID><ID>107</ID><ID>108</ID><ID>109</ID><ID>110</ID><ID>111</ID><ID>142</ID><ID>143</ID><ID>144</ID><ID>145</ID><ID>146</ID></VNETS></CLUSTER></CLUSTER_POOL>. How many VNETs are in this cluster? Return only the number."
+  assert:
+    - type: contains
+      value: "11"

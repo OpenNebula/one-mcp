@@ -1,0 +1,62 @@
+# Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+
+description: Minimal Promptfoo evaluation for OpenNebula FastMCP server
+
+# ---------------------------------------------------------------------------
+# 1. Prompt template
+# ---------------------------------------------------------------------------
+#  - We inject the server system instructions via {{ system_prompt }}
+#  - The USER message comes from the `input` variable of each test case.
+# ---------------------------------------------------------------------------
+prompts:
+  - |
+      {% raw %}
+      {{ system_prompt }}
+      {% endraw %}
+      USER: {{ input }}
+
+# ---------------------------------------------------------------------------
+# 2. Provider configuration
+# ---------------------------------------------------------------------------
+#  - Uses OpenAI (any model we have access to) and routes it through the
+#    MCP server that we launch locally with Python.
+# ---------------------------------------------------------------------------
+providers:
+  - id: openai:chat:gpt-4o-mini
+    config:
+      temperature: 0
+      mcp:
+        enabled: true
+        server:
+          command: uv
+          args: ["run", "-p", "/opt/one-aiops/.venv/bin/python", "--", "/opt/one-aiops/main.py"]
+          name: opennebula-mcp-server
+      tool_choice: auto
+
+# ---------------------------------------------------------------------------
+# 3. Global variables
+# ---------------------------------------------------------------------------
+vars:
+  # Define variables that will be used in the tests
+  system_prompt: file://../static/mcp_server_prompt.md
+  vm_images_states_description: file://../static/vm_images_states_description.md
+  vm_template_description: file://../static/vm_template_description.md
+
+# ---------------------------------------------------------------------------
+# Tests location
+# ---------------------------------------------------------------------------
+tests: file://tests/tools/**/*.yaml

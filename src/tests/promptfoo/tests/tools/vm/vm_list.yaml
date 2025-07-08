@@ -1,0 +1,57 @@
+# Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Test if the AI can answer questions about VM lists using the MCP tools and therefore can understand the XML format of VM pools
+
+- vars:
+    input: "You MUST not call any tools. How many VMs are in this pool? Return only the number: <VM_POOL><VM><ID>89</ID></VM><VM><ID>88</ID></VM><VM><ID>87</ID></VM></VM_POOL>"
+  assert:
+    - type: contains
+      value: "3"
+
+- vars:
+    input: "List all VM IDs from this pool: <VM_POOL><VM><ID>53</ID></VM><VM><ID>54</ID></VM><VM><ID>55</ID></VM></VM_POOL>"
+  assert:
+    - type: assert-set
+      assert:
+        - type: contains
+          value: "53"
+        - type: contains
+          value: "54"
+        - type: contains
+          value: "55"
+
+- vars:
+    input: "You MUST not call any tools. What are the names of VMs in this pool: <VM_POOL><VM><NAME>vm-test-1</NAME></VM><VM><NAME>vm-test-2</NAME></VM></VM_POOL>"
+  assert:
+    - type: assert-set
+      assert:
+        - type: contains
+          value: "vm-test-1"
+        - type: contains
+          value: "vm-test-2"
+
+- vars:
+    input: |
+      {{ vm_template_description }}
+      You MUST not call any tools. How many VMs are running on the host having ID 0? Return only the number: <VM_POOL><VM><HISTORY_RECORDS><HISTORY><HID>0</HID></HISTORY></HISTORY_RECORDS></VM><VM><HISTORY_RECORDS><HISTORY><HID>2</HID></HISTORY></HISTORY_RECORDS></VM><VM><HISTORY_RECORDS><HISTORY><HID>0</HID></HISTORY></HISTORY_RECORDS></VM></VM_POOL>"
+  assert:
+    - type: contains
+      value: "2"
+
+- vars:
+    input: "You MUST not call any tools. How many VMs have the ubuntu2204 image? Return only the number: <VM_POOL><VM><TEMPLATE><DISK><IMAGE><![CDATA[ubuntu2204]]></IMAGE></DISK></TEMPLATE></VM><VM><TEMPLATE><DISK><IMAGE><![CDATA[centos7]]></IMAGE></DISK></TEMPLATE></VM><VM><TEMPLATE><DISK><IMAGE><![CDATA[ubuntu2204]]></IMAGE></DISK></TEMPLATE></VM></VM_POOL>"
+  assert:
+    - type: contains
+      value: "2" 

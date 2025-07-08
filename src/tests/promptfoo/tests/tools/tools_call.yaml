@@ -1,0 +1,151 @@
+# Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Test if the right tools are called based on user input
+
+# Infra tools
+- vars:
+    input: "List the VMs running"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_vms'
+    - type: javascript
+      value: output[0].arguments.state === '3'
+
+- vars:
+    input: "List the VMs that are active"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_vms'
+    - type: javascript
+      value: output[0].arguments.state === '3'
+
+- vars:
+    input: "List all clusters"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_clusters'
+
+- vars:
+    input: "List all hosts"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_hosts'
+
+- vars:
+    input: "List all datastores"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_datastores'
+
+- vars:
+    input: "List all networks"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_networks'
+
+- vars:
+    input: "List all images"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_images'
+
+# Templates tools
+- vars:
+    input: "List all templates"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_templates'
+
+# VM tools
+- vars:
+    input: "Get VM status for VM 89"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'get_vm_status'
+
+- vars:
+    input: "List all VMs"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_vms'
+
+- vars:
+    input: "Show all virtual machines"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_vms'
+
+- vars:
+    input: "List VMs in POWEROFF state"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_vmsdsas'
+
+- vars:
+    input: "Show VMs running on host 0"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_vms'
+
+# VM execute_command tool tests - the LLM should call get_vm_status first to get IP, then execute_command
+- vars:
+    input: "Execute 'ls -la /' on VM 94"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'get_vm_status'
+
+- vars:
+    input: "Run the command 'echo hello' in VM 94"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'get_vm_status'
+
+- vars:
+    input: "Check disk usage with df -h on virtual machine 94"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'get_vm_status'

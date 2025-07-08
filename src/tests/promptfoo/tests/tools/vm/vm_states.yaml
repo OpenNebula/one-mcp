@@ -1,0 +1,154 @@
+# Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Test if the AI can answer questions about VM status using the MCP tools and correctly map state numbers to state descriptions
+
+# Main VM States (STATE) Tests
+- vars:
+    input: "What is the state name for VM state number 0: <VM><STATE>0</STATE></VM>"
+  assert:
+    - type: icontains
+      value: "INIT"
+
+- vars:
+    input: "What operation is this VM performing? Return only the description of the operation: <VM><STATE>3</STATE><LCM_STATE>17</LCM_STATE></VM>"
+  assert:
+    - type: icontains-any
+      value:
+      - 'attach'
+      - 'detach'
+
+- vars:
+    input: "What is the state name for VM state number 2: <VM><STATE>2</STATE></VM>"
+  assert:
+    - type: icontains
+      value: "HOLD"
+
+- vars:
+    input: "What is the state name for VM state number 3: <VM><STATE>3</STATE></VM>"
+  assert:
+    - type: icontains
+      value: "ACTIVE"
+
+- vars:
+    input: "What is the state name for VM state number 4: <VM><STATE>4</STATE></VM>"
+  assert:
+    - type: icontains
+      value: "STOPPED"
+
+- vars:
+    input: "What is the state name for VM state number 5: <VM><STATE>5</STATE></VM>"
+  assert:
+    - type: icontains
+      value: "SUSPENDED"
+
+- vars:
+    input: "What is the state name for VM state number 6: <VM><STATE>6</STATE></VM>"
+  assert:
+    - type: icontains
+      value: "DONE"
+
+- vars:
+    input: "What is the state name for VM state number 8: <VM><STATE>8</STATE></VM>"
+  assert:
+    - type: icontains
+      value: "POWEROFF"
+
+- vars:
+    input: "What is the state name for VM state number 9: <VM><STATE>9</STATE></VM>"
+  assert:
+    - type: icontains
+      value: "UNDEPLOYED"
+
+- vars:
+    input: "What is the state name for VM state number 10: <VM><STATE>10</STATE></VM>"
+  assert:
+    - type: icontains
+      value: "CLONING"
+
+- vars:
+    input: "What is the state name for VM state number 11: <VM><STATE>11</STATE></VM>"
+  assert:
+    - type: icontains
+      value: "CLONING_FAILURE"
+
+# LCM States (when STATE = 3 ACTIVE) Tests
+- vars:
+    input: "What is the LCM state name for LCM state number 0 when VM is ACTIVE: <VM><STATE>3</STATE><LCM_STATE>0</LCM_STATE></VM>"
+  assert:
+    - type: icontains
+      value: "LCM_INIT"
+
+- vars:
+    input: "What is the LCM state name for LCM state number 1 when VM is ACTIVE: <VM><STATE>3</STATE><LCM_STATE>1</LCM_STATE></VM>"
+  assert:
+    - type: icontains
+      value: "PROLOG"
+
+- vars:
+    input: "What is the LCM state name for LCM state number 2 when VM is ACTIVE: <VM><STATE>3</STATE><LCM_STATE>2</LCM_STATE></VM>"
+  assert:
+    - type: icontains
+      value: "BOOT"
+
+- vars:
+    input: "What is the LCM state name for LCM state number 3 when VM is ACTIVE: <VM><STATE>3</STATE><LCM_STATE>3</LCM_STATE></VM>"
+  assert:
+    - type: icontains
+      value: "RUNNING"
+
+- vars:
+    input: "What is the LCM state name for LCM state number 4 when VM is ACTIVE: <VM><STATE>3</STATE><LCM_STATE>4</LCM_STATE></VM>"
+  assert:
+    - type: icontains
+      value: "MIGRATE"
+
+- vars:
+    input: "What is the LCM state name for LCM state number 16 when VM is ACTIVE: <VM><STATE>3</STATE><LCM_STATE>16</LCM_STATE></VM>"
+  assert:
+    - type: icontains
+      value: "UNKNOWN"
+
+- vars:
+    input: "What is the LCM state name for LCM state number 17 when VM is ACTIVE: <VM><STATE>3</STATE><LCM_STATE>17</LCM_STATE></VM>"
+  assert:
+    - type: icontains
+      value: "HOTPLUG"
+
+- vars:
+    input: "What is the LCM state name for LCM state number 25 when VM is ACTIVE: <VM><STATE>3</STATE><LCM_STATE>25</LCM_STATE></VM>"
+  assert:
+    - type: icontains
+      value: "HOTPLUG_NIC"
+
+# Complex state scenarios
+- vars:
+    input: "You MUST not use any tools. Describe the current state of this VM: <VM><STATE>3</STATE><LCM_STATE>3</LCM_STATE></VM>"
+  assert:
+    - type: assert-set
+      assert:
+        - type: icontains
+          value: "ACTIVE"
+        - type: icontains
+          value: "RUNNING"
+
+- vars:
+    input: "What operation is this VM performing: <VM><STATE>3</STATE><LCM_STATE>17</LCM_STATE></VM>"
+  assert:
+    - type: contains-any
+      value:
+        - "disk attach"
+        - "attaching"
+        - "attach"
+        - "detach"
