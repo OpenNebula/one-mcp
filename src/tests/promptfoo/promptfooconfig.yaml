@@ -32,9 +32,11 @@ prompts:
 # ---------------------------------------------------------------------------
 # 2. Provider configuration
 # ---------------------------------------------------------------------------
-#  - Uses OpenAI (any model we have access to) and routes it through the
+#  Important: Change the path to the MCP server if you change the MCP server location.
+# - Uses OpenAI (any model we have access to) and routes it through the
 #    MCP server that we launch locally with Python.
-# ---------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+
 providers:
   - id: openai:chat:gpt-4o-mini
     config:
@@ -43,7 +45,7 @@ providers:
         enabled: true
         server:
           command: uv
-          args: ["run", "-p", "/opt/one-aiops/.venv/bin/python", "--", "/opt/one-aiops/main.py"]
+          args: ["run", "-p", "/MY_PATH/one-mcp/.venv/bin/python", "--", "/MY_PATH/one-mcp/main.py"]
           name: opennebula-mcp-server
       tool_choice: auto
 
