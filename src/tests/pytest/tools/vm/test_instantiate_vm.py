@@ -40,7 +40,7 @@ async def test_instantiate_vm_allow_write_false(mcp_server_read_only):
             "instantiate_vm", {"template_id": "0", "vm_name": "test_vm"}
         )
 
-        output = result[0].text
+        output = result.content[0].text
         expected_error = "Write operations are disabled"
         assert expected_error in output
 
@@ -55,7 +55,7 @@ async def test_instantiate_vm(mcp_server):
             {"template_id": "0", "vm_name": "deny_test", "cpu": "1", "memory": "1"},
         )
 
-        output = result[0].text
+        output = result.content[0].text
         # Assert that a VM has been correctly created
         assert search_for_pattern(output, r"<ID>\d+</ID>"), (
             f"Expected pattern '<ID>\\d+</ID>' not found in output: {output}"
@@ -73,7 +73,7 @@ async def test_instantiate_vm_invalid_template_id(mcp_server):
         result = await client.call_tool(
             "instantiate_vm", {"template_id": "-1", "vm_name": "test_vm"}
         )
-        output = result[0].text
+        output = result.content[0].text
         assert "template_id must be a positive integer" in output
 
         # Test missing required template_id parameter should raise ToolError
@@ -88,13 +88,13 @@ async def test_instantiate_vm_invalid_cpu_and_memory(mcp_server):
         result = await client.call_tool(
             "instantiate_vm", {"template_id": "0", "vm_name": "test_vm", "cpu": "-1"}
         )
-        output = result[0].text
+        output = result.content[0].text
         assert "cpu must be a positive integer" in output
 
         result = await client.call_tool(
             "instantiate_vm", {"template_id": "0", "vm_name": "test_vm", "memory": "-1"}
         )
-        output = result[0].text
+        output = result.content[0].text
         assert "memory must be a positive integer" in output
 
 
@@ -106,7 +106,7 @@ async def test_instantiate_vm_with_network_name(mcp_server):
             "instantiate_vm",
             {"template_id": "0", "vm_name": "test_vm", "network_name": "service"},
         )
-        output = result[0].text
+        output = result.content[0].text
         assert search_for_pattern(output, r"<ID>\d+</ID>"), (
             f"Expected pattern '<ID>\\d+</ID>' not found in output: {output}"
         )

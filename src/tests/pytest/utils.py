@@ -74,7 +74,7 @@ async def wait_for_state(
     deadline = asyncio.get_event_loop().time() + timeout
     while True:
         status_out = await client.call_tool("get_vm_status", {"vm_id": vm_id})
-        status_xml = status_out[0].text
+        status_xml = status_out.content[0].text
 
         state_match = search_for_pattern(status_xml, rf"<STATE>{target_state}</STATE>")
         if state_match:

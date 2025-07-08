@@ -36,7 +36,7 @@ async def test_manage_vm_allow_write_false(mcp_server_read_only):
         result = await client.call_tool(
             "manage_vm", {"vm_id": "1", "operation": "start"}
         )
-        output = result[0].text
+        output = result.content[0].text
         assert "<error>" in output
         assert "Write operations are disabled" in output
 
@@ -50,7 +50,7 @@ async def test_manage_vm_invalid_inputs(mcp_server):
         result = await client.call_tool(
             "manage_vm", {"vm_id": "invalid", "operation": "start"}
         )
-        output = result[0].text
+        output = result.content[0].text
         assert "<error>" in output
         assert "non-negative integer" in output
 
@@ -58,7 +58,7 @@ async def test_manage_vm_invalid_inputs(mcp_server):
         result = await client.call_tool(
             "manage_vm", {"vm_id": "-1", "operation": "start"}
         )
-        output = result[0].text
+        output = result.content[0].text
         assert "<error>" in output
         assert "non-negative integer" in output
 
@@ -66,7 +66,7 @@ async def test_manage_vm_invalid_inputs(mcp_server):
         result = await client.call_tool(
             "manage_vm", {"vm_id": "1", "operation": "invalid_op"}
         )
-        output = result[0].text
+        output = result.content[0].text
         assert "<error>" in output
         assert "Invalid operation" in output
 
@@ -82,7 +82,9 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
                 "instantiate_vm",
                 {"template_id": "0", "vm_name": "test-manage-vm"},
             )
-            inst_xml = inst_out[0].text
+            print("inst_out")
+            print(inst_out)
+            inst_xml = inst_out.content[0].text
 
             vm_id = get_vm_id(inst_xml)
 
@@ -99,7 +101,7 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
             stop_out = await client.call_tool(
                 "manage_vm", {"vm_id": vm_id, "operation": "stop"}
             )
-            stop_xml = stop_out[0].text
+            stop_xml = stop_out.content[0].text
             assert "<result>" in stop_xml, f"Stop operation failed: {stop_xml}"
 
             # Wait until POWEROFF
@@ -112,7 +114,7 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
             start_out = await client.call_tool(
                 "manage_vm", {"vm_id": vm_id, "operation": "start"}
             )
-            start_xml = start_out[0].text
+            start_xml = start_out.content[0].text
             assert "<result>" in start_xml or "<error>" in start_xml
             status_xml = await wait_for_state(
                 client, vm_id, "3", target_lcm_state="3", timeout=180
@@ -128,7 +130,7 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
             reboot_out = await client.call_tool(
                 "manage_vm", {"vm_id": vm_id, "operation": "reboot"}
             )
-            reboot_xml = reboot_out[0].text
+            reboot_xml = reboot_out.content[0].text
             assert "<result>" in reboot_xml
             status_xml = await wait_for_state(client, vm_id, "3", timeout=180)
             assert search_for_pattern(status_xml, r"<STATE>3</STATE>"), (
@@ -142,7 +144,7 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
             term_out = await client.call_tool(
                 "manage_vm", {"vm_id": vm_id, "operation": "terminate", "hard": True}
             )
-            term_xml = term_out[0].text
+            term_xml = term_out.content[0].text
             assert "<result>" in term_xml or "<error>" in term_xml
 
     finally:
@@ -163,7 +165,7 @@ async def test_manage_vm_hard_operations(mcp_server):
                 "instantiate_vm",
                 {"template_id": "0", "vm_name": "test-manage-vm"},
             )
-            inst_xml = inst_out[0].text
+            inst_xml = inst_out.content[0].text
 
             vm_id = get_vm_id(inst_xml)
 
@@ -181,7 +183,7 @@ async def test_manage_vm_hard_operations(mcp_server):
             reboot_out = await client.call_tool(
                 "manage_vm", {"vm_id": vm_id, "operation": "reboot", "hard": True}
             )
-            reboot_xml = reboot_out[0].text
+            reboot_xml = reboot_out.content[0].text
             assert "<result>" in reboot_xml
             status_xml = await wait_for_state(client, vm_id, "3", timeout=180)
             assert search_for_pattern(status_xml, r"<STATE>3</STATE>"), (
@@ -197,7 +199,7 @@ async def test_manage_vm_hard_operations(mcp_server):
             stop_out = await client.call_tool(
                 "manage_vm", {"vm_id": vm_id, "operation": "stop", "hard": True}
             )
-            stop_xml = stop_out[0].text
+            stop_xml = stop_out.content[0].text
             assert "<result>" in stop_xml
             status_xml = await wait_for_state(client, vm_id, "8", timeout=180)
             assert search_for_pattern(status_xml, r"<STATE>8</STATE>"), (
