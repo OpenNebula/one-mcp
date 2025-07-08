@@ -32,8 +32,9 @@ prompts:
 # ---------------------------------------------------------------------------
 # 2. Provider configuration
 # ---------------------------------------------------------------------------
-#  Important: Change the path to the MCP server if you change the MCP server location.
-# - Uses OpenAI (any model we have access to) and routes it through the
+  #  IMPORTANT: This is a template file. Copy it to promptfooconfig.yaml and 
+  #  update the paths below to match your local machine setup.
+  # - Uses OpenAI (any model we have access to) and routes it through the
 #    MCP server that we launch locally with Python.
 # --------------------------------------------------------------------------
 
@@ -45,7 +46,7 @@ providers:
         enabled: true
         server:
           command: uv
-          args: ["run", "-p", "/MY_PATH/one-mcp/.venv/bin/python", "--", "/MY_PATH/one-mcp/main.py"]
+          args: ["run", "-p", "/path/to/your/project/.venv/bin/python", "--", "/path/to/your/project/main.py"]
           name: opennebula-mcp-server
       tool_choice: auto
 
