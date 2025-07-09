@@ -1,0 +1,183 @@
+# Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Test if the AI correctly calls the instantiate_vm tool with proper arguments
+
+# Basic instantiation with required template_id only
+- vars:
+    input: "Create a new VM using template ID 5"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.template_id === '5'
+
+# Instantiation with VM name
+- vars:
+    input: "Create a new VM using template 3 and name it 'web-server-01'"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.template_id === '3'
+    - type: javascript
+      value: output[0].arguments.vm_name === 'web-server-01'
+
+# Instantiation with CPU and memory specifications
+- vars:
+    input: "Create a VM from template 2 with 2 CPUs and 4096 MB of memory"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.template_id === '2'
+    - type: javascript
+      value: output[0].arguments.cpu === '2'
+    - type: javascript
+      value: output[0].arguments.memory === '4096'
+
+# Instantiation with network specification
+- vars:
+    input: "Instantiate a VM using template number 1 and connect it to the 'production' network"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.template_id === '1'
+    - type: javascript
+      value: output[0].arguments.network_name === 'production'
+
+# Complete instantiation with all parameters
+- vars:
+    input: "Create a VM named 'database-server' using template 10, allocate 4 CPUs, 8192 MB memory, and connect to 'backend' network"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.template_id === '10'
+    - type: javascript
+      value: output[0].arguments.vm_name === 'database-server'
+    - type: javascript
+      value: output[0].arguments.cpu === '4'
+    - type: javascript
+      value: output[0].arguments.memory === '8192'
+    - type: javascript
+      value: output[0].arguments.network_name === 'backend'
+
+# Test that might call list_templates first, then instantiate_vm
+- vars:
+    input: "Deploy a new VM using template number seven"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.template_id === '7'
+
+# Test with specific resource requirements
+- vars:
+    input: "I need a VM with 1 CPU and 2048 MB RAM from template 0, name it 'test-vm'"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.template_id === '0'
+    - type: javascript
+      value: output[0].arguments.cpu === '1'
+    - type: javascript
+      value: output[0].arguments.memory === '2048'
+    - type: javascript
+      value: output[0].arguments.vm_name === 'test-vm'
+
+# Test that AI calls the correct tool for VM creation
+- vars:
+    input: "Create a new virtual machine from template number 8"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.template_id === '8'
+
+# Test handling of memory units (should convert to MB)
+- vars:
+    input: "Create VM from template 4 with 2GB of memory"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.template_id === '4'
+    - type: javascript
+      value: output[0].arguments.memory === '2048'
+
+# Test network name with special characters
+- vars:
+    input: "Deploy VM from template 6 on the 'public-web' network"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.network_name === 'public-web'
+
+# Test that required parameter template_id is always included
+- vars:
+    input: "I want to create a new VM having template number 1 and 1 CPU"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.template_id === '1'
+    - type: javascript
+      value: output[0].arguments.cpu === '1'
+
+# Test multiple VM creation request (should call instantiate_vm exactly once)
+- vars:
+    input: "Create two VMs: one from template number 1 named 'vm1' with 1 CPU, and another from template number 2 named 'vm2' with 2 CPUs"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 2 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.vm_name === 'vm1'
+    - type: javascript
+      value: output[1].arguments.vm_name === 'vm2'
+    - type: javascript
+      value: output[0].arguments.template_id === '1'
+    - type: javascript
+      value: output[1].arguments.template_id === '2'
+    - type: javascript
+      value: output[0].arguments.cpu === '1'
+    - type: javascript
+      value: output[1].arguments.cpu === '2'

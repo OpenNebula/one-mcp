@@ -208,3 +208,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local configuration files
+# Promptfoo config with machine-specific paths (use .template for sharing)
+src/tests/promptfoo/promptfooconfig.yaml

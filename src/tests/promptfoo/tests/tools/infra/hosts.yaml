@@ -1,0 +1,49 @@
+# Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Test if the AI can answer questions about the hosts using the MCP tools and therefore can understand the XML format of the hosts
+
+- vars:
+    input: "Consider the following XML: <HOST_POOL><HOST><HOST_SHARE><RUNNING_VMS>8</RUNNING_VMS></HOST_SHARE></HOST></HOST_POOL>. How many VMs are running on this host? Return only the number."
+  assert:
+    - type: contains
+      value: "8"
+
+- vars:
+    input: "What is the host name: <HOST_POOL><HOST><NAME>localhost</NAME></HOST></HOST_POOL>"
+  assert:
+    - type: contains
+      value: "localhost"
+
+- vars:
+    input: "What is the ID and the name of the cluster this host belongs to: <HOST_POOL><HOST><CLUSTER_ID>0</CLUSTER_ID><CLUSTER>default</CLUSTER></HOST></HOST_POOL>"
+  assert:
+    - type: assert-set
+      assert:
+        - type: contains
+          value: "0"
+        - type: contains
+          value: "default"
+
+- vars:
+    input: "What hypervisor is this host using: <HOST_POOL><HOST><TEMPLATE><HYPERVISOR><![CDATA[kvm]]></HYPERVISOR></TEMPLATE></HOST></HOST_POOL>"
+  assert:
+    - type: icontains
+      value: "kvm"
+
+- vars:
+    input: "You MUST not call any tools. Given this XML, what is the state of the host linked to the state number?: <HOST_POOL><HOST><STATE>2</STATE></HOST></HOST_POOL>"
+  assert:
+    - type: icontains
+      value: "monitored"

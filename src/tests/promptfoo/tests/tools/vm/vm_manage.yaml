@@ -1,0 +1,154 @@
+# Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Promptfoo tests for manage_vm tool lifecycle operations
+
+# 1. Happy-path stop on a RUNNING VM
+- vars:
+    input: "Power off virtual machine 42."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'manage_vm'
+    - type: javascript
+      value: output[0].arguments.vm_id === '42'
+    - type: javascript
+      value: output[0].arguments.operation === 'stop'
+    - type: javascript
+      value: output[0].arguments.hasOwnProperty('hard') === false
+
+# 2. Happy-path start after a STOPPED/POWEROFF VM
+- vars:
+    input: "Turn on VM with ID 17."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'manage_vm'
+    - type: javascript
+      value: output[0].arguments.vm_id === '17'
+    - type: javascript
+      value: output[0].arguments.operation === 'start'
+    - type: javascript
+      value: output[0].arguments.hasOwnProperty('hard') === false
+
+# 3. Force termination (hard flag)
+- vars:
+    input: "Immediately destroy VM 8, no graceful shutdown."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'manage_vm'
+    - type: javascript
+      value: output[0].arguments.vm_id === '8'
+    - type: javascript
+      value: output[0].arguments.operation === 'terminate'
+    - type: javascript
+      value: output[0].arguments.hasOwnProperty('hard') === true
+
+# 4. Reboot VM 11
+- vars:
+    input: "Reboot VM 11"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '11' &&
+             output[0].arguments.operation === 'reboot'
+
+# 5. Robustness against invalid VM ID (non-numeric)
+- vars:
+    input: "Restart VM abc123."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    # Assistant should not attempt a manage_vm call with an invalid ID as written in the tool description
+    - type: javascript
+      value: output.length === 0 || output[0].function !== 'manage_vm'
+
+# 6. Force reboot with hard flag
+- vars:
+    input: "Force-reboot VM 15 now."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '15' &&
+             output[0].arguments.operation === 'reboot' &&
+             output[0].arguments.hasOwnProperty('hard') && output[0].arguments.hard === true
+
+# 7. Hard stop (poweroff) request
+- vars:
+    input: "Power off VM 9 immediately."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '9' &&
+             output[0].arguments.operation === 'stop' &&
+             output[0].arguments.hasOwnProperty('hard') && output[0].arguments.hard === true
+
+# 8. Unsupported operation keyword (lock)
+- vars:
+    input: "Lock VM 5 to prevent certain actions like admin actions"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 0
+
+# 9. Multiple actions in one sentence
+- vars:
+    input: "Stop VM 1 and terminate VM 2."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 2 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '1' &&
+             output[0].arguments.operation === 'stop' &&
+             output[1].function === 'manage_vm' &&
+             output[1].arguments.vm_id === '2' &&
+             output[1].arguments.operation === 'terminate'
+
+# 10. Hard flag where it should not appear (start)
+- vars:
+    input: "Start VM 21 with force."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '21' &&
+             output[0].arguments.operation === 'start' &&
+             output[0].arguments.hasOwnProperty('hard') === true
+
+# 11. Negative VM ID
+- vars:
+    input: "Reboot VM -3."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 0

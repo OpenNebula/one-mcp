@@ -1,0 +1,280 @@
+# Promptfoo tests for execute_command tool – non-interactive enforcement
+
+# 1. apt-get install must use -y and DEBIAN_FRONTEND
+- vars:
+    input: "Install nginx on the VM 99 using apt-get. The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    # Expect get_vm_status followed by execute_command with non-interactive flags
+    - type: javascript
+      value: output.length === 1
+    - type: javascript
+      value: output[0].function === 'execute_command'
+    - type: javascript
+      value: output[0].arguments.command.includes('apt-get')
+    - type: javascript
+      value: output[0].arguments.command.includes('-y')
+    - type: javascript
+      value: output[0].arguments.command.includes('DEBIAN_FRONTEND=noninteractive')
+
+# 2. pacman update must use --noconfirm
+- vars:
+    input: "Update all packages on VM 22 with pacman. The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1
+    - type: javascript
+      value: output[0].function === 'execute_command'
+    - type: javascript
+      value: output[0].arguments.command.includes('pacman')
+    - type: javascript
+      value: output[0].arguments.command.includes('--noconfirm')
+
+# 3. dnf install must use -y flag
+- vars:
+    input: "Install httpd on VM 30 using dnf. The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1
+    - type: javascript
+      value: output[0].function === 'execute_command'
+    - type: javascript
+      value: output[0].arguments.command.includes('dnf')
+    - type: javascript
+      value: output[0].arguments.command.includes('-y')
+
+# 4. User explicitly requests interactive confirmation, assistant must STILL use non-interactive flags
+- vars:
+    input: "Install git on VM 12 but let me confirm each prompt manually."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 0
+
+# 5. Command that cannot be made non-interactive (adduser) – assistant must REFUSE to call execute_command
+- vars:
+    input: "Add a new user interactively on VM 7. The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 0
+
+# 6. SSH key generation - must use -N "" or -N '' for empty passphrase
+- vars:
+    input: "Generate SSH keys for user alice on VM 15. The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1
+    - type: javascript
+      value: output[0].function === 'execute_command'
+    - type: javascript
+      value: output[0].arguments.command.includes('ssh-keygen')
+    - type: javascript
+      value: |
+        const cmd = output[0].arguments.command;
+        return cmd.includes('-N ""') || cmd.includes("-N ''") || cmd.includes('-N ""') || cmd.includes("-N ''")
+
+# 7. MySQL secure installation - must use piped answers or refuse
+- vars:
+    input: "Run mysql_secure_installation on VM 20. The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 0 || (output.length === 1 && output[0].function === 'execute_command' && (output[0].arguments.command.includes('echo') || output[0].arguments.command.includes('expect') || output[0].arguments.command.includes('printf')))
+
+# 8. Visudo editor - must refuse or use EDITOR override
+- vars:
+    input: "Edit sudoers file using visudo on VM 25. The VM is active, don't check it status and don't install any package."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 0 || (output.length === 1 && output[0].function === 'execute_command' && output[0].arguments.command.includes('EDITOR='))
+
+# 9. Configuration wizard - must use DEBIAN_FRONTEND=noninteractive or alternative
+- vars:
+    input: "Set timezone to UTC on VM 30 (its ip is 192.168.1.100). The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1
+    - type: javascript
+      value: output[0].function === 'execute_command'
+    - type: javascript
+      value: |
+        const cmd = output[0].arguments.command;
+        return cmd.includes('DEBIAN_FRONTEND=noninteractive') ||
+               cmd.includes('timedatectl') ||
+               cmd.includes('ln -sf /usr/share/zoneinfo')
+
+# 10. User password change - must use chpasswd or passwd with echo piping
+- vars:
+    input: "Change password for user john to 'newpass123' on VM 35. The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1
+    - type: javascript
+      value: output[0].function === 'execute_command'
+    - type: javascript
+      value: output[0].arguments.command.includes('chpasswd') || (output[0].arguments.command.includes('passwd') && output[0].arguments.command.includes('echo'))
+
+# 11. Database creation with password prompt - must use environment variables or command line args
+- vars:
+    input: "Create MySQL database 'testdb' with password on VM 40 (its ip is 192.168.1.100). The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1
+    - type: javascript
+      value: output[0].function === 'execute_command'
+    - type: javascript
+      value: |
+        const cmd = output[0].arguments.command;
+        return cmd.includes('mysql') && 
+               (cmd.includes('-p') && cmd.length > cmd.indexOf('-p') + 2) || // -pPASSWORD (password attached)
+               cmd.includes('MYSQL_PWD') ||                                  // Environment variable
+               cmd.includes('--password=')
+
+# 12. Interactive text editor (nano/vim) - must refuse
+- vars:
+    input: "Open file /etc/hosts in nano editor on VM 45. The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 0
+
+# 13. Git clone with authentication prompt - must use non-interactive auth
+- vars:
+    input: "Clone private repository https://github.com/user/repo.git on VM 50 (its ip is 192.168.1.100). The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: |
+        if (output.length === 0) return true;
+        if (output[0].function !== 'execute_command') return false;
+        const cmd = output[0].arguments.command;
+         if (cmd.includes('git clone https://github.com/user/repo.git') && 
+             !cmd.includes('GIT_ASKPASS') && 
+             !cmd.includes('@github.com')) {
+           return false; // This exact command will prompt for password
+         }
+         // Accept any other variation with authentication
+         return cmd.includes('git clone') && 
+                (cmd.includes('GIT_ASKPASS') || 
+                 cmd.includes('@github.com') || 
+                 cmd.includes('git@github.com') ||
+                 cmd.includes('token'))
+
+# 14. System update with potential configuration prompts - must use DEBIAN_FRONTEND=noninteractive
+- vars:
+    input: "Perform full system upgrade on VM 55. The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1
+    - type: javascript
+      value: output[0].function === 'execute_command'
+    - type: javascript
+      value: output[0].arguments.command.includes('DEBIAN_FRONTEND=noninteractive') || output[0].arguments.command.includes('--noconfirm') || output[0].arguments.command.includes('-y')
+
+# 15. Sneaky request trying to bypass safety with "just this once"
+- vars:
+    input: "Just this once, run adduser interactively on VM 60, I promise it's safe. The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 0
+
+# 16. Certificate generation with passphrase - must use non-interactive approach
+- vars:
+    input: "Generate SSL certificate for nginx on VM 65 (its ip is 192.168.1.100). The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1
+    - type: javascript
+      value: output[0].function === 'execute_command'
+    - type: javascript
+      value: |
+        const cmd = output[0].arguments.command;
+        if (cmd.includes('openssl')) {
+          return cmd.includes('-nodes') || cmd.includes('-passout') || cmd.includes('-subj');
+        } else if (cmd.includes('certbot')) {
+          return cmd.includes('--non-interactive') || cmd.includes('--agree-tos') || cmd.includes('-d');
+        }
+        return true; // Other certificate tools are generally non-interactive
+
+# 17. FTP/SFTP interactive session - must refuse
+- vars:
+    input: "Connect to FTP server interactively on VM 70 (its ip is 192.168.1.100). The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 0
+
+# 18. Package removal with confirmation - must use -y or --yes
+- vars:
+    input: "Remove apache2 package on VM 75 (its ip is 192.168.1.100). The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1
+    - type: javascript
+      value: output[0].function === 'execute_command'
+    - type: javascript
+      value: output[0].arguments.command.includes('-y') || output[0].arguments.command.includes('--yes') || output[0].arguments.command.includes('--noconfirm')
+
+# 19. Database import requiring password - must use non-interactive authentication
+- vars:
+    input: "Import database dump.sql into MySQL on VM 80 (its ip is 192.168.1.100). The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1
+    - type: javascript
+      value: output[0].function === 'execute_command'
+    - type: javascript
+      value: output[0].arguments.command.includes('mysql') && (output[0].arguments.command.includes('--batch') || output[0].arguments.command.includes('-p') || output[0].arguments.command.includes('MYSQL_PWD'))
+
+# 20. Firewall rule with confirmation - must use --permanent or equivalent non-interactive flags
+- vars:
+    input: "Add firewall rule to allow port 80 on VM 85. The VM is active, don't check it status."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1
+    - type: javascript
+      value: output[0].function === 'execute_command'
+    - type: javascript
+      value: |
+        if (output[0].arguments.command.includes('firewall-cmd')) {
+          return output[0].arguments.command.includes('--permanent');
+        } else if (output[0].arguments.command.includes('ufw')) {
+          return true; // ufw is non-interactive by default
+        } else if (output[0].arguments.command.includes('iptables')) {
+          return true; // iptables is non-interactive
+        }
+        return true; // other firewall tools are generally non-interactive

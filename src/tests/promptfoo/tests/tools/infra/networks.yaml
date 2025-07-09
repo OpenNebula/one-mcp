@@ -1,0 +1,112 @@
+# Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Test if the AI can answer questions about the networks using the MCP tools and therefore can understand the XML format of the networks
+
+- vars:
+    input: "How many networks are in this XML: <VNET_POOL><VNET><ID>101</ID><NAME>service</NAME></VNET><VNET><ID>107</ID><NAME>vnet_1_private</NAME></VNET><VNET><ID>142</ID><NAME>vnet_2_private</NAME></VNET></VNET_POOL>"
+  assert:
+    - type: assert-set
+      threshold: 0.5
+      assert:
+        - type: contains
+          value: "3"
+        - type: icontains
+          value: "three"
+
+- vars:
+    input: "What is the name of network with ID 101 from this XML: <VNET_POOL><VNET><ID>101</ID><NAME>service</NAME><BRIDGE><![CDATA[brpub]]></BRIDGE></VNET></VNET_POOL>"
+  assert:
+    - type: icontains
+      value: "service"
+
+- vars:
+    input: "You MUST not call any tools. Given this XML, what bridge is used by the service network? <VNET_POOL><VNET><ID>101</ID><NAME>service</NAME><BRIDGE><![CDATA[brpub]]></BRIDGE><STATE><![CDATA[1]]></STATE></VNET></VNET_POOL>"
+  assert:
+      - type: llm-rubric
+        value: "Correctly identifies that the bridge used by the service network is 'brpub'"
+
+- vars:
+    input: "How many leases are used in this network: <VNET_POOL><VNET><NAME>service</NAME><USED_LEASES>9</USED_LEASES><BRIDGE><![CDATA[brpub]]></BRIDGE></VNET></VNET_POOL>"
+  assert:
+    - type: assert-set
+      threshold: 0.5
+      assert:
+        - type: contains
+          value: "9"
+        - type: icontains
+          value: "nine"
+
+- vars:
+    input: "You MUST not call any tools. What is the state of this network? <VNET_POOL><VNET><NAME>vnet_private</NAME><STATE><![CDATA[1]]></STATE><BRIDGE><![CDATA[onebr107]]></BRIDGE></VNET></VNET_POOL>"
+  assert:
+      - type: assert-set
+        threshold: 0.5
+        assert:
+          - type: contains
+            value: "1"
+          - type: icontains
+            value: "active"
+
+- vars:
+    input: "Count the VMs connected to this network: <VNET_POOL><VNET><NAME>service</NAME><UPDATED_VMS><ID>53</ID><ID>54</ID><ID>55</ID><ID>85</ID><ID>86</ID><ID>87</ID><ID>88</ID><ID>89</ID></UPDATED_VMS></VNET></VNET_POOL>"
+  assert:
+    - type: assert-set
+      threshold: 0.5
+      assert:
+        - type: contains
+          value: "8"
+        - type: icontains
+          value: "eight"
+
+- vars:
+    input: "You MUST not call any tools. What virtual network driver is used? <VNET_POOL><VNET><NAME>service</NAME><VN_MAD><![CDATA[dummy]]></VN_MAD><BRIDGE><![CDATA[brpub]]></BRIDGE></VNET></VNET_POOL>"
+  assert:
+      - type: llm-rubric
+        value: "Correctly identifies the VN_MAD (virtual network driver) as 'dummy'"
+
+- vars:
+    input: "How many address ranges are in this network: <VNET_POOL><VNET><NAME>service</NAME><AR_POOL><AR><AR_ID><![CDATA[0]]></AR_ID><IP><![CDATA[172.20.0.3]]></IP><SIZE><![CDATA[65533]]></SIZE></AR></AR_POOL></VNET></VNET_POOL>"
+  assert:
+    - type: assert-set
+      threshold: 0.5
+      assert:
+        - type: contains
+          value: "1"
+        - type: icontains
+          value: "one"
+
+- vars:
+    input: "You MUST not call any tools. What is the IP range size for this network? <VNET_POOL><VNET><NAME>private</NAME><AR_POOL><AR><IP><![CDATA[192.168.150.1]]></IP><SIZE><![CDATA[254]]></SIZE><TYPE><![CDATA[IP4]]></TYPE></AR></AR_POOL></VNET></VNET_POOL>"
+  assert:
+      - type: llm-rubric
+        value: "Correctly identifies the IP range size as 254 addresses"
+
+- vars:
+    input: "You MUST not call any tools. Which cluster does this network belong to? Return the digit of the cluster ID only: <VNET_POOL><VNET><NAME>service</NAME><CLUSTERS><ID>0</ID></CLUSTERS><BRIDGE><![CDATA[brpub]]></BRIDGE></VNET></VNET_POOL>"
+  assert:
+    - type: icontains
+      value: "0"
+
+- vars:
+    input: "You MUST not call any tools. What bridge type is used by this network? <VNET_POOL><VNET><NAME>vnet_private</NAME><BRIDGE_TYPE><![CDATA[linux]]></BRIDGE_TYPE><BRIDGE><![CDATA[onebr146]]></BRIDGE></VNET></VNET_POOL>"
+  assert:
+      - type: llm-rubric
+        value: "Correctly identifies the bridge type as 'linux'"
+
+- vars:
+    input: "You MUST not call any tools. What address type is used in this network? <VNET_POOL><VNET><NAME>vnet_ethernet</NAME><AR_POOL><AR><TYPE><![CDATA[ETHER]]></TYPE><MAC><![CDATA[02:00:19:71:e3:09]]></MAC><SIZE><![CDATA[254]]></SIZE></AR></AR_POOL></VNET></VNET_POOL>"
+  assert:
+      - type: llm-rubric
+        value: "Correctly identifies the address type as 'ETHER' or 'Ethernet'" 
