@@ -2,7 +2,7 @@
 
 # 1. apt-get install must use -y and DEBIAN_FRONTEND
 - vars:
-    input: "Install nginx on the VM 99 using apt-get. The VM is active, don't check it status."
+    input: "Install nginx on the VM 99 using apt-get. The VM is active, you MUST NOT check its status."
   options:
     transform: file://transforms/extract_function_call.js
   assert:
@@ -121,15 +121,10 @@
 # 10. User password change - must use chpasswd or passwd with echo piping
 - vars:
     input: "Change password for user john to 'newpass123' on VM 35. The VM is active, don't check it status."
-  options:
-    transform: file://transforms/extract_function_call.js
   assert:
-    - type: javascript
-      value: output.length === 1
-    - type: javascript
-      value: output[0].function === 'execute_command'
-    - type: javascript
-      value: output[0].arguments.command.includes('chpasswd') || (output[0].arguments.command.includes('passwd') && output[0].arguments.command.includes('echo'))
+    - type: icontains
+      value: "Error: The requested command is considered disruptive and will not be executed."
+
 
 # 11. Database creation with password prompt - must use environment variables or command line args
 - vars:
