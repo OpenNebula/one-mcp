@@ -16,7 +16,7 @@
 
 import pytest
 from src.tools.utils.base import execute_one_command
-from src.tests.pytest.utils import get_vm_id, search_for_pattern, wait_for_state, cleanup_test_vms
+from src.tests.pytest.utils import get_vm_id, get_vm_ip, search_for_pattern, wait_for_state, cleanup_test_vms
 from fastmcp import Client
 
 
@@ -80,7 +80,7 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
             # 1. Instantiate VM
             inst_out = await client.call_tool(
                 "instantiate_vm",
-                {"template_id": "0", "vm_name": "test_vm_manage_vm_lifecycle_operations"},
+                {"template_id": "0", "vm_name": "test_vm_manage_vm_lifecycle_operations", "network_name": "service"},
             )
             inst_xml = inst_out.content[0].text
 
@@ -94,6 +94,14 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
             status_xml = await wait_for_state(
                 client, vm_id, "3", target_lcm_state="3", timeout=180
             )
+
+            # Keep the VM alive for the test
+            vm_ip = get_vm_ip(status_xml)
+            assert vm_ip, f"Could not get IP for VM {vm_id} from XML:\n{status_xml}"
+            exec_out = await client.call_tool(
+                "execute_command", {"vm_ip_address": vm_ip, "command": "nohup sleep 999 &"}
+            )
+            assert "<error>" not in exec_out.content[0].text
 
             # 3. Stop (poweroff) VM – expect success (<result>)
             stop_out = await client.call_tool(
@@ -157,7 +165,7 @@ async def test_manage_vm_hard_operations(mcp_server):
             # 1. Instantiate VM
             inst_out = await client.call_tool(
                 "instantiate_vm",
-                {"template_id": "0", "vm_name": "test_vm_manage_vm_hard_operations"},
+                {"template_id": "0", "vm_name": "test_vm_manage_vm_hard_operations", "network_name": "service"},
             )
             inst_xml = inst_out.content[0].text
 
@@ -171,6 +179,15 @@ async def test_manage_vm_hard_operations(mcp_server):
             status_xml = await wait_for_state(
                 client, vm_id, "3", target_lcm_state="3", timeout=180
             )
+
+            # Keep the VM alive for the test
+            vm_ip = get_vm_ip(status_xml)
+            assert vm_ip, f"Could not get IP for VM {vm_id} from XML:\n{status_xml}"
+            exec_out = await client.call_tool(
+                "execute_command", {"vm_ip_address": vm_ip, "command": "nohup sleep 999 &"}
+            )
+            assert "<error>" not in exec_out.content[0].text
+
             print(f"Instantiated VM {vm_id} and is RUNNING")
 
             # 3. Hard reboot

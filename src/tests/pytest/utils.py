@@ -17,6 +17,8 @@ import re
 from fastmcp import Client
 from typing import Optional
 from src.tools.utils.base import execute_one_command
+import xml.etree.ElementTree as ET
+from typing import Optional
 
 
 def cleanup_test_vms():
@@ -53,6 +55,36 @@ def cleanup_test_vms():
         print(f"Warning: VM cleanup failed: {e}")
         # Don't raise - we want tests to continue even if cleanup fails
 
+def get_vm_ip(xml_output: str) -> Optional[str]:
+    """Extract the IP address from the VM XML data.
+
+    It first checks the `TEMPLATE/NIC/IP` path, which is the most reliable source.
+    If not found, it falls back to searching for `*_IP` fields within the
+    `TEMPLATE/CONTEXT` section.
+
+    Args:
+        xml_output: The XML output from `onevm show`.
+
+    Returns:
+        The IP address as a string, or None if not found.
+    """
+    try:
+        root = ET.fromstring(xml_output)
+
+        # 1. Prefer the IP from the NIC section, as it's more direct
+        nic_ip_element = root.find("TEMPLATE/NIC/IP")
+        if nic_ip_element is not None and nic_ip_element.text:
+            return nic_ip_element.text
+
+        # 2. Fallback to searching in the CONTEXT section
+        context = root.find("TEMPLATE/CONTEXT")
+        if context is not None:
+            for child in context:
+                if child.tag.endswith("_IP") and child.text:
+                    return child.text
+    except ET.ParseError as e:
+        print(f"Error parsing XML to get VM IP: {e}")
+    return None
 
 def get_vm_id(output: str) -> str:
     """Get the VM ID from the output of a command that returns an XML string
