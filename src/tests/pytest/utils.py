@@ -16,6 +16,42 @@ import asyncio
 import re
 from fastmcp import Client
 from typing import Optional
+from src.tools.utils.base import execute_one_command
+
+
+def cleanup_test_vms():
+    """Clean up any leftover test VMs from previous runs.
+    
+    This function looks for VMs with test-related names and deletes them.
+    
+    Test VM name patterns that will be cleaned up:
+    - test_vm_*
+    """
+    try:
+        # Get all VMs and filter for test VMs
+        result = execute_one_command(["onevm", "list", "--list", "ID,NAME", "--csv"])
+        if "error" not in result:
+            cleaned_count = 0
+            for line in result.strip().split('\n'):
+                if line and 'test_vm_' in line:
+                    try:
+                        vm_id = line.split(',')[0].strip()
+                        if vm_id.isdigit():
+                            execute_one_command(["onevm", "recover", "--delete", vm_id])
+                            print(f"Cleaned up leftover test VM: {vm_id}")
+                            cleaned_count += 1
+                    except Exception as e:
+                        print(f"Warning: Failed to cleanup VM from line '{line}': {e}")
+                        continue
+            
+            if cleaned_count > 0:
+                print(f"✅ Cleaned up {cleaned_count} test VMs")
+            else:
+                print("ℹ️  No test VMs found to cleanup")
+                
+    except Exception as e:
+        print(f"Warning: VM cleanup failed: {e}")
+        # Don't raise - we want tests to continue even if cleanup fails
 
 
 def get_vm_id(output: str) -> str:
