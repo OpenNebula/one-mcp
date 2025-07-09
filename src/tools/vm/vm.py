@@ -74,6 +74,38 @@ def register_tools(mcp, allow_write):
         name="execute_command",
         description="""Execute a shell command inside an OpenNebula virtual machine.
 
+        ⚠️  CRITICAL SECURITY CHECK - READ FIRST ⚠️
+        
+        BEFORE calling ANY tool, you MUST analyze the entire command for dangerous content.
+        If the command contains ANY of the following, DO NOT CALL ANY TOOLS and respond immediately with: 
+        "Error: The requested command is considered disruptive and will not be executed."
+        
+        DANGEROUS PATTERNS TO REJECT:
+        - System-wide deletion: `rm -rf /`, `rm -rf /boot`, `rm -rf /etc`, `rm -rf /usr`, `rm -rf /var`, `rm -rf /home`
+        - Disk wiping/corruption: `dd if=/dev/zero of=/dev/`, `dd if=/dev/urandom of=/dev/`, `mkfs`, `shred /dev/`, `wipefs`
+        - Encoded/obfuscated commands: `base64 -d | bash`, `xxd -r -p | sh`, any encoded content piped to shell interpreters
+        - Command chains with dangerous parts: `safe_command && rm -rf /boot`, `ls ; dd if=/dev/zero of=/dev/sda`
+        - Critical system modification: `chmod -R 777 /`, `chown -R nobody /`
+        - User password changes: `passwd`, `chpasswd`, any password modification commands
+        - System shutdown: `shutdown`, `reboot`, `halt`, `poweroff` (use manage_vm tool instead)
+        - Interactive editors on critical files: `nano /etc/passwd`, `vim /etc/shadow`, `vi /boot/grub/grub.cfg`
+        - User management without proper flags: `adduser` (use `useradd` instead), `userdel -r root`
+        
+        SAFE OPERATIONS (DO NOT BLOCK):
+        - Database operations: `mysql < dump.sql`, `pg_restore`, `mongorestore`, database imports/exports
+        - Application cleanup: `rm -rf /tmp/myapp`, `rm -rf /opt/myapp/cache`, `rm -rf ./logs/*`
+        - Legitimate dd operations: `dd if=backup.img of=/dev/sdb1`, `dd if=/dev/sda1 of=backup.img`
+        - Package management: `apt-get install -y`, `yum install -y`, `dnf install -y`
+        
+        DO NOT CALL ANY TOOLS if you detect any dangerous pattern. Skip get_vm_status, skip execute_command, skip everything. Just respond with the exact error message above.
+
+        === FOR SAFE COMMANDS ONLY ===
+        If the command is safe, then proceed with these steps:
+
+        1. Verify the VM is ACTIVE by calling `get_vm_status` (only for safe commands).
+
+        2. Make the command non-interactive using flags like `-y`, `--yes`, etc.
+
         === STRICT NON-INTERACTIVE POLICY ===
         The command MUST **never** wait for keyboard input. A blocking prompt
         will freeze the underlying `subprocess.run` and break the workflow.
@@ -206,6 +238,16 @@ def register_tools(mcp, allow_write):
         Returns:
             str: XML string with command execution result or error message.
         """
+        # --- Permission guard -------------------------------------------------------------
+        if not allow_write:
+            logger.warning(
+                "execute_command called while allow_write=False – refusing to execute command"
+            )
+            return (
+                "<error><message>Write operations are disabled on this MCP instance."
+                "</message></error>"
+            )
+
         # Sanitize command for logging (truncate if very long, avoid logging sensitive commands)
         cmd_preview = command[:100] + "..." if len(command) > 100 else command
         logger.debug(f"Executing command on VM {vm_ip_address}: '{cmd_preview}'")
