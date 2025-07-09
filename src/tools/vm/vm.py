@@ -88,6 +88,16 @@ def register_tools(mcp, allow_write):
            - When no safe workaround exists, **do not execute**. Return an
              error that user interaction is required.
 
+        === SECURITY WARNING: DISRUPTIVE COMMANDS ===
+        This tool executes commands with root privileges on the target VM.
+        Exercise extreme caution. Do NOT execute commands that could:
+        - Delete or corrupt system files (`rm -rf /`, `mkfs`, etc.)
+        - Change user passwords or permissions in an unintended way (`passwd`, `chmod -R 777 /`)
+        - Shut down or reboot the machine (`shutdown`, `reboot`) unless that is the specific goal. Use the `manage_vm` tool for lifecycle operations.
+        - Install or remove critical system packages.
+        
+        Always double-check your commands before execution.
+
         2. Verify the VM is ACTIVE in the same turn by calling `get_vm_status`.
 
         3. For long-running tasks, follow the background-process protocol:
@@ -206,6 +216,16 @@ def register_tools(mcp, allow_write):
         Returns:
             str: XML string with command execution result or error message.
         """
+        # --- Permission guard -------------------------------------------------------------
+        if not allow_write:
+            logger.warning(
+                "execute_command called while allow_write=False – refusing to execute command"
+            )
+            return (
+                "<error><message>Write operations are disabled on this MCP instance."
+                "</message></error>"
+            )
+
         # Sanitize command for logging (truncate if very long, avoid logging sensitive commands)
         cmd_preview = command[:100] + "..." if len(command) > 100 else command
         logger.debug(f"Executing command on VM {vm_ip_address}: '{cmd_preview}'")

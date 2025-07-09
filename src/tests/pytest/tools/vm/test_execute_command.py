@@ -147,3 +147,14 @@ async def test_execute_command_with_pipes_and_complex_logic(mcp_server, test_vm_
         output = result.content[0].text
 
         assert "hello world test" in output, "Should contain the full echoed string"
+
+
+@pytest.mark.asyncio
+async def test_execute_command_write_disabled(mcp_server_read_only):
+    """Test that execute_command fails when allow_write is False."""
+    async with Client(mcp_server_read_only) as client:
+        result = await client.call_tool(
+            "execute_command",
+            {"vm_ip_address": "127.0.0.1", "command": "echo 'test'"},
+        )
+        assert "write operations are disabled" in result.content[0].text.lower()
