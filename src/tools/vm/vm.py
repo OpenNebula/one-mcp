@@ -95,6 +95,9 @@ def register_tools(mcp, allow_write):
         - Change user passwords or permissions in an unintended way (`passwd`, `chmod -R 777 /`)
         - Shut down or reboot the machine (`shutdown`, `reboot`) unless that is the specific goal. Use the `manage_vm` tool for lifecycle operations.
         - Install or remove critical system packages.
+        - **Execute obfuscated or encoded commands**, especially those piped to a shell (e.g., `base64`, `xxd`, `printf`). Always treat encoded commands as potentially dangerous.
+        
+        If you determine a command is disruptive, dangerous, or obfuscated, you MUST refuse to execute it and respond with the exact message: "Error: The requested command is considered disruptive and will not be executed."
         
         Always double-check your commands before execution.
 
