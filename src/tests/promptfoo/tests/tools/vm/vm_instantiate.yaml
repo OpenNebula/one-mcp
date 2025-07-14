@@ -87,7 +87,7 @@
 
 # Test that might call list_templates first, then instantiate_vm
 - vars:
-    input: "Deploy a new VM using template number seven"
+    input: "Deploy a new VM using template number seven. Name it 'test-vm'"
   options:
     transform: file://transforms/extract_function_call.js
   assert:
@@ -95,10 +95,12 @@
       value: output.length === 1 && output[0].function === 'instantiate_vm'
     - type: javascript
       value: output[0].arguments.template_id === '7'
+    - type: javascript
+      value: output[0].arguments.vm_name === 'test-vm'
 
 # Test with specific resource requirements
 - vars:
-    input: "I need a VM with 1 CPU and 2048 MB RAM from template 0, name it 'test-vm'"
+    input: "I need a VM with 1 CPU and 2048 MB RAM from template 0, name it 'test-vm'. The template exists, therefore no need to check it."
   options:
     transform: file://transforms/extract_function_call.js
   assert:
@@ -115,7 +117,7 @@
 
 # Test that AI calls the correct tool for VM creation
 - vars:
-    input: "Create a new virtual machine from template number 8"
+    input: "Create a new virtual machine from template number 8. The template exists, therefore no need to check it."
   options:
     transform: file://transforms/extract_function_call.js
   assert:
@@ -139,7 +141,7 @@
 
 # Test network name with special characters
 - vars:
-    input: "Deploy VM from template 6 on the 'public-web' network"
+    input: "Deploy VM from template 6 on the 'public-web' network. The network exists, therefore no need to check it."
   options:
     transform: file://transforms/extract_function_call.js
   assert:
@@ -150,7 +152,7 @@
 
 # Test that required parameter template_id is always included
 - vars:
-    input: "I want to create a new VM having template number 1 and 1 CPU"
+    input: "I want to create a new VM having template number 1 and 1 CPU. The template exists, therefore no need to check it."
   options:
     transform: file://transforms/extract_function_call.js
   assert:
@@ -161,18 +163,14 @@
     - type: javascript
       value: output[0].arguments.cpu === '1'
 
-# Test multiple VM creation request (should call instantiate_vm exactly once)
+# Test multiple VM creation request (should call two times instantiate_vm, one with num_instances=1 and one with num_instances=2)
 - vars:
-    input: "Create two VMs: one from template number 1 named 'vm1' with 1 CPU, and another from template number 2 named 'vm2' with 2 CPUs"
+    input: "Create three VMs: one from template number 1 with 1 CPU, and the other two from template number 2 with 2 CPUs. The templates exist, therefore no need to check them."
   options:
     transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 2 && output[0].function === 'instantiate_vm'
-    - type: javascript
-      value: output[0].arguments.vm_name === 'vm1'
-    - type: javascript
-      value: output[1].arguments.vm_name === 'vm2'
     - type: javascript
       value: output[0].arguments.template_id === '1'
     - type: javascript
@@ -181,3 +179,50 @@
       value: output[0].arguments.cpu === '1'
     - type: javascript
       value: output[1].arguments.cpu === '2'
+    - type: javascript
+      value: output[0].arguments.num_instances === '1'
+    - type: javascript
+      value: output[1].arguments.num_instances === '2'
+
+# Basic multi-instance request
+- vars:
+    input: "Create 3 VMs from template 7"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.template_id === '7'
+    - type: javascript
+      value: output[0].arguments.num_instances === '3'
+
+# Multi-instance with naming and resources
+- vars:
+    input: "Instantiate 2 VMs from template 1, name them 'web-cluster', and give them 2 CPUs each"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.template_id === '1'
+    - type: javascript
+      value: output[0].arguments.vm_name === 'web-cluster'
+    - type: javascript
+      value: output[0].arguments.num_instances === '2'
+    - type: javascript
+      value: output[0].arguments.cpu === '2'
+
+# Natural language for instance count
+- vars:
+    input: "Please deploy a couple of worker VMs using template 3"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'instantiate_vm'
+    - type: javascript
+      value: output[0].arguments.template_id === '3'
+    - type: javascript
+      value: output[0].arguments.num_instances > '1'
