@@ -16,7 +16,75 @@ import asyncio
 import re
 from fastmcp import Client
 from typing import Optional
+from src.tools.utils.base import execute_one_command
+import xml.etree.ElementTree as ET
+from typing import Optional
 
+
+def cleanup_test_vms():
+    """Clean up any leftover test VMs from previous runs.
+    
+    This function looks for VMs with test-related names and deletes them.
+    
+    Test VM name patterns that will be cleaned up:
+    - test_vm_*
+    """
+    try:
+        # Get all VMs and filter for test VMs
+        result = execute_one_command(["onevm", "list", "--list", "ID,NAME", "--csv"])
+        if "error" not in result:
+            cleaned_count = 0
+            for line in result.strip().split('\n'):
+                if line and 'test_vm_' in line:
+                    try:
+                        vm_id = line.split(',')[0].strip()
+                        if vm_id.isdigit():
+                            execute_one_command(["onevm", "recover", "--delete", vm_id])
+                            print(f"Cleaned up leftover test VM: {vm_id}")
+                            cleaned_count += 1
+                    except Exception as e:
+                        print(f"Warning: Failed to cleanup VM from line '{line}': {e}")
+                        continue
+            
+            if cleaned_count > 0:
+                print(f"✅ Cleaned up {cleaned_count} test VMs")
+            else:
+                print("ℹ️  No test VMs found to cleanup")
+                
+    except Exception as e:
+        print(f"Warning: VM cleanup failed: {e}")
+        # Don't raise - we want tests to continue even if cleanup fails
+
+def get_vm_ip(xml_output: str) -> Optional[str]:
+    """Extract the IP address from the VM XML data.
+
+    It first checks the `TEMPLATE/NIC/IP` path, which is the most reliable source.
+    If not found, it falls back to searching for `*_IP` fields within the
+    `TEMPLATE/CONTEXT` section.
+
+    Args:
+        xml_output: The XML output from `onevm show`.
+
+    Returns:
+        The IP address as a string, or None if not found.
+    """
+    try:
+        root = ET.fromstring(xml_output)
+
+        # 1. Prefer the IP from the NIC section, as it's more direct
+        nic_ip_element = root.find("TEMPLATE/NIC/IP")
+        if nic_ip_element is not None and nic_ip_element.text:
+            return nic_ip_element.text
+
+        # 2. Fallback to searching in the CONTEXT section
+        context = root.find("TEMPLATE/CONTEXT")
+        if context is not None:
+            for child in context:
+                if child.tag.endswith("_IP") and child.text:
+                    return child.text
+    except ET.ParseError as e:
+        print(f"Error parsing XML to get VM IP: {e}")
+    return None
 
 def get_vm_id(output: str) -> str:
     """Get the VM ID from the output of a command that returns an XML string
