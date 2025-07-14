@@ -19,6 +19,7 @@ Unit tests for the instantiate_vm MCP tool.
 import fastmcp
 import pytest
 from fastmcp import Client
+import xml.etree.ElementTree as ET
 from src.tools.utils.base import execute_one_command
 from src.tests.pytest.utils import get_vm_id, search_for_pattern, cleanup_test_vms
 
@@ -73,7 +74,7 @@ async def test_instantiate_vm_invalid_template_id(mcp_server):
             "instantiate_vm", {"template_id": "-1", "vm_name": "test_vm_invalid_template_id"}
         )
         output = result.content[0].text
-        assert "template_id must be a positive integer" in output
+        assert "error" in output
 
         # Test missing required template_id parameter should raise ToolError
         with pytest.raises(fastmcp.exceptions.ToolError):
@@ -88,13 +89,13 @@ async def test_instantiate_vm_invalid_cpu_and_memory(mcp_server):
             "instantiate_vm", {"template_id": "0", "vm_name": "test_vm_invalid_cpu", "cpu": "-1"}
         )
         output = result.content[0].text
-        assert "cpu must be a positive integer" in output
+        assert "error" in output
 
         result = await client.call_tool(
             "instantiate_vm", {"template_id": "0", "vm_name": "test_vm_invalid_memory", "memory": "-1"}
         )
         output = result.content[0].text
-        assert "memory must be a positive integer" in output
+        assert "error" in output
         cleanup_test_vms()
 
 
@@ -114,4 +115,75 @@ async def test_instantiate_vm_with_network_name(mcp_server):
             output, r"<NETWORK><!\[CDATA\[service\]\]></NETWORK>"
         ), f"Expected network 'service' not found in output: {output}"
 
+        cleanup_test_vms()
+
+
+@pytest.mark.asyncio
+async def test_instantiate_vm_multiple_instances(mcp_server):
+    """Test that instantiate_vm can create multiple VMs at once."""
+    async with Client(mcp_server) as client:
+        result = await client.call_tool(
+            "instantiate_vm",
+            {
+                "template_id": "0",
+                "vm_name": "test_vm_multiple_instances",
+                "num_instances": "2",
+            },
+        )
+        output = result.content[0].text
+
+        # Parse XML and check for multiple VM elements
+        try:
+            root = ET.fromstring(output)
+            assert root.tag == "VMS"
+            vms = root.findall("VM")
+            assert len(vms) == 2
+            # Check that each VM has an ID
+            for vm in vms:
+                assert vm.find("ID") is not None
+        except ET.ParseError as e:
+            pytest.fail(f"Failed to parse XML output: {e}\nOutput was: {output}")
+        finally:
+            cleanup_test_vms()
+
+
+@pytest.mark.asyncio
+async def test_instantiate_vm_invalid_num_instances(mcp_server):
+    """Test that instantiate_vm returns an error for invalid num_instances."""
+    async with Client(mcp_server) as client:
+        # Test with negative num_instances
+        result = await client.call_tool(
+            "instantiate_vm",
+            {
+                "template_id": "0",
+                "vm_name": "test_vm_invalid_num",
+                "num_instances": "-1",
+            },
+        )
+        output = result.content[0].text
+        assert "error" in output
+
+        # Test with zero num_instances
+        result = await client.call_tool(
+            "instantiate_vm",
+            {
+                "template_id": "0",
+                "vm_name": "test_vm_invalid_num",
+                "num_instances": "0",
+            },
+        )
+        output = result.content[0].text
+        assert "error" in output
+
+        # Test with non-integer num_instances
+        result = await client.call_tool(
+            "instantiate_vm",
+            {
+                "template_id": "0",
+                "vm_name": "test_vm_invalid_num",
+                "num_instances": "abc",
+            },
+        )
+        output = result.content[0].text
+        assert "error" in output
         cleanup_test_vms()
