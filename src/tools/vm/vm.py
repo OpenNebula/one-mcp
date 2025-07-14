@@ -15,6 +15,7 @@
 """VM management tools for OpenNebula MCP Server."""
 
 from logging import getLogger
+import re
 import xml.etree.ElementTree as ET
 from typing import Optional
 
@@ -491,7 +492,7 @@ def register_tools(mcp, allow_write):
         
         Before calling this tool, ALWAYS perform these checks in the same turn:
         - vm_id validation
-            - Accept only strings that represent non-negative integers (e.g. "0", "42").
+            - For terminate operations, this can be a single ID, a comma-separated list (e.g., "1,2,3"), or a range (e.g., "5..10"). For all other operations, it must be a single, non-negative integer ID.
             - If the user supplies anything else (letters, symbols, negative numbers), DO NOT call manage_vm.
             - Instead, respond with a short apology and explain the input must be a non-negative integer.
         - operation validation
@@ -501,7 +502,7 @@ def register_tools(mcp, allow_write):
         {VM_STATES_DESCRIPTION}
 
         Args:
-            vm_id: VM ID as string but it must be IT MUST BE A NON-NEGATIVE INTEGER otherwise you cannot call this tool
+            vm_id: For terminate operations, this can be a single ID, a comma-separated list (e.g., "1,2,3"), or a range (e.g., "5..10"). For all other operations, it must be a single, non-negative integer ID.
             operation: Lifecycle operation to perform (start, stop, reboot, terminate)
             hard: Whether to use hard/forced mode for applicable operations
 
@@ -522,7 +523,7 @@ def register_tools(mcp, allow_write):
         """Manage VM lifecycle operations with state validation.
 
         Args:
-            vm_id: VM ID as string
+            vm_id: For terminate operations, this can be a single ID, a comma-separated list (e.g., "1,2,3"), or a range (e.g., "5..10"). For all other operations, it must be a single, non-negative integer ID.
             operation: Lifecycle operation to perform (start, stop, reboot, terminate)
             hard: Whether to use hard/forced mode for applicable operations
 
@@ -536,17 +537,48 @@ def register_tools(mcp, allow_write):
             )
             return "<error><message>Write operations are disabled on this MCP instance.</message></error>"
 
-        if not vm_id.isdigit() or int(vm_id) < 0:
-            logger.error(f"Invalid VM ID provided: {vm_id}")
-            return (
-                "<error><message>vm_id must be a non-negative integer</message></error>"
-            )
-
         valid_operations = ["start", "stop", "reboot", "terminate"]
         operation = operation.strip().lower()
         if operation not in valid_operations:
             logger.error(f"Invalid operation: {operation}")
             return f"<error><message>Invalid operation '{operation}'. Valid operations: {', '.join(valid_operations)}</message></error>"
+
+        # Handle multi-VM terminate as a special case
+        is_multi_vm = "," in vm_id or ".." in vm_id
+        if is_multi_vm:
+            if operation != "terminate":
+                return "<error><message>Managing multiple VMs at once is only supported for the 'terminate' operation.</message></error>"
+
+            cmd_parts = ["onevm", "terminate", vm_id]
+            if hard:
+                cmd_parts.append("--hard")
+
+            logger.debug(f"Executing multi-VM terminate command: {' '.join(cmd_parts)}")
+            try:
+                result = execute_one_command(cmd_parts)
+                if "<error>" in result:
+                    return result
+                logger.info(f"Multi-VM terminate for '{vm_id}' operation completed")
+
+                success_root = ET.Element("result")
+                ET.SubElement(success_root, "vm_id").text = vm_id
+                ET.SubElement(success_root, "operation").text = operation
+                ET.SubElement(success_root, "hard").text = str(hard)
+                ET.SubElement(
+                    success_root, "message"
+                ).text = f"VMs {vm_id} {operation} operation executed successfully"
+                ET.SubElement(success_root, "command_output").text = result.strip()
+                return ET.tostring(success_root, encoding="unicode")
+            except Exception as e:
+                logger.error(f"Failed to execute multi-VM terminate for {vm_id}: {e}")
+                return f"<error><message>Failed to execute multi-VM terminate: {e}</message></error>"
+
+        # Single VM operation logic
+        if not vm_id.isdigit() or int(vm_id) < 0:
+            logger.error(f"Invalid VM ID provided: {vm_id}")
+            return (
+                "<error><message>vm_id must be a non-negative integer</message></error>"
+            )
 
         # Get current VM status
         logger.debug(f"Getting current status for VM {vm_id} before {operation}")
