@@ -460,9 +460,11 @@ def register_tools(mcp, allow_write):
                 cpu: Optional - CPU percentage reserved for the VM (1=100% one CPU)
                 memory: Optional - Memory amount given to the VM. By default the unit is megabytes.
                 network_name: Optional - network name to attach
+                num_instances: Optional - number of VMs to instantiate
 
             Returns:
-                str: XML string with VM details or error message
+                str: XML string with VM details or error message. If multiple VMs are created,
+                     the XML will contain a <VMS> root element with a <VM> for each.
         """,
     )
     def instantiate_vm(
@@ -471,6 +473,7 @@ def register_tools(mcp, allow_write):
         cpu: Optional[str] = None,
         memory: Optional[str] = None,
         network_name: Optional[str] = None,
+        num_instances: Optional[str] = None,
     ) -> str:
         """Instantiate a new VM from an existing template.
 
@@ -484,9 +487,11 @@ def register_tools(mcp, allow_write):
             cpu: Optional - CPU percentage reserved for the VM (1=100% one CPU)
             memory: Optional - Memory amount given to the VM. By default the unit is megabytes.
             network_name: Optional - network name to attach
+            num_instances: Optional - number of VMs to instantiate
 
         Returns:
-            str: XML string with VM details or error message
+            str: XML string with VM details or error message. If multiple VMs are created,
+                 the XML will contain a <VMS> root element with a <VM> for each.
         """
         # --- Permission guard -------------------------------------------------------------
         if not allow_write:
@@ -499,7 +504,12 @@ def register_tools(mcp, allow_write):
             )
 
         # Validate all numeric parameters that are provided
-        numeric_params = {"template_id": template_id, "cpu": cpu, "memory": memory}
+        numeric_params = {
+            "template_id": template_id,
+            "cpu": cpu,
+            "memory": memory,
+            "num_instances": num_instances,
+        }
 
         for param_name, value in numeric_params.items():
             if value is not None:
@@ -510,13 +520,16 @@ def register_tools(mcp, allow_write):
                     or (int(value) <= 0 and param_name != "template_id")
                 ):
                     logger.error(f"Invalid {param_name} provided: {value}")
-                    return f"<error><message>{param_name} must be a positive integer</message></error>"
+                    return f"<error><message>{param_name} must be a a non-negative integer for the template_id, and a positive integer for the other parameters</message></error>"
 
         cmd_parts = ["onetemplate", "instantiate", template_id]
 
         # Optional flags
         if vm_name:
             cmd_parts.extend(["--name", vm_name])
+
+        if num_instances:
+            cmd_parts.extend(["--multiple", num_instances])
 
         if cpu is not None:
             cmd_parts.extend(["--cpu", cpu])
@@ -534,15 +547,16 @@ def register_tools(mcp, allow_write):
 
         instantiate_output = execute_one_command(cmd_parts)
 
-        # Parse the textual output to extract the new VM ID (expects line "VM ID: <id>")
-        vm_id: Optional[str] = None
+        # Parse the textual output to extract the new VM IDs
+        vm_ids: list[str] = []
         for line in instantiate_output.splitlines():
             line = line.strip()
             if line.lower().startswith("vm id"):
                 vm_id = line.split(":")[-1].strip()
-                break
+                if vm_id.isdigit():
+                    vm_ids.append(vm_id)
 
-        if not vm_id or not vm_id.isdigit():
+        if not vm_ids:
             logger.error(
                 "Failed to parse VM ID from instantiate output: %s", instantiate_output
             )
@@ -551,8 +565,20 @@ def register_tools(mcp, allow_write):
                 f"{instantiate_output}</message></error>"
             )
 
-        logger.debug(f"Fetching XML details for newly created VM {vm_id}")
-        return execute_one_command(["onevm", "show", vm_id, "--xml"])
+        logger.debug(f"Fetching XML details for newly created VMs {vm_ids}")
+        if len(vm_ids) == 1:
+            return execute_one_command(["onevm", "show", vm_ids[0], "--xml"])
+        else:
+            root = ET.Element("VMS")
+            for vm_id in vm_ids:
+                vm_xml_str = execute_one_command(["onevm", "show", vm_id, "--xml"])
+                try:
+                    vm_element = ET.fromstring(vm_xml_str)
+                    root.append(vm_element)
+                except ET.ParseError as e:
+                    logger.error(f"Failed to parse XML for VM {vm_id}: {e}")
+                    logger.error(f"XML content: {vm_xml_str}")
+            return ET.tostring(root, encoding="unicode")
 
     @mcp.tool(
         name="manage_vm",
