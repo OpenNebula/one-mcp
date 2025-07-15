@@ -342,7 +342,103 @@ async def test_manage_vm_terminate_mixed_valid_invalid_ids(mcp_server):
             term_xml = term_out.content[0].text
 
             # Expect an error message about the invalid ID
-            assert "<error>" in term_xml and "999999" in term_xml
+            assert "Error" in term_xml and "999999" in term_xml
 
     finally:
         cleanup_test_vms()
+
+
+@pytest.mark.asyncio
+async def test_manage_vm_stop_multiple_vms_comma(mcp_server):
+    """Stop (poweroff) multiple VMs using a comma-separated list of IDs."""
+    vm_ids = []
+    try:
+        async with Client(mcp_server) as client:
+            # 1. Instantiate 3 VMs
+            for i in range(3):
+                inst_out = await client.call_tool(
+                    "instantiate_vm",
+                    {
+                        "template_id": "0",
+                        "vm_name": f"test_vm_manage_vm_multi_stop_comma_{i}",
+                        "network_name": "service",
+                        
+                    },
+                )
+                vm_id = get_vm_id(inst_out.content[0].text)
+                assert vm_id and vm_id.isdigit()
+                vm_ids.append(vm_id)
+
+            # Wait for all VMs to be ACTIVE/RUNNING
+            await asyncio.gather(
+                *[wait_for_state(client, vid, "3", target_lcm_state="3", timeout=120) for vid in vm_ids]
+            )
+
+            # 2. Issue single poweroff for all IDs
+            vm_id_str = ",".join(vm_ids)
+            stop_out = await client.call_tool(
+                "manage_vm", {"vm_id": vm_id_str, "operation": "stop"}
+            )
+            stop_xml = stop_out.content[0].text
+            assert "<result>" in stop_xml
+
+            # 3. Confirm every VM reaches POWEROFF (STATE=8)
+            await asyncio.gather(
+                *[wait_for_state(client, vid, "8", timeout=120) for vid in vm_ids]
+            )
+    finally:
+        cleanup_test_vms()
+
+
+@pytest.mark.asyncio
+async def test_manage_vm_reboot_multiple_vms_range_hard(mcp_server):
+    """Hard-reboot multiple VMs using a numeric range."""
+    vm_ids = []
+    try:
+        async with Client(mcp_server) as client:
+            # Instantiate 2+ VMs
+            for i in range(3):
+                inst_out = await client.call_tool(
+                    "instantiate_vm",
+                    {
+                        "template_id": "0",
+                        "vm_name": f"test_vm_manage_vm_multi_reboot_range_{i}",
+                        "network_name": "service",
+                    },
+                )
+                vm_id = get_vm_id(inst_out.content[0].text)
+                assert vm_id and vm_id.isdigit()
+                vm_ids.append(int(vm_id))
+
+            vm_ids.sort()
+
+            await asyncio.gather(
+                *[wait_for_state(client, str(vid), "3", target_lcm_state="3", timeout=120) for vid in vm_ids]
+            )
+
+            vm_id_range = f"{vm_ids[0]}..{vm_ids[-1]}"
+            reboot_out = await client.call_tool(
+                "manage_vm",
+                {"vm_id": vm_id_range, "operation": "reboot", "hard": True},
+            )
+            reboot_xml = reboot_out.content[0].text
+            assert "<result>" in reboot_xml
+
+            # After hard reboot, VMs return to ACTIVE/RUNNING
+            await asyncio.gather(
+                *[wait_for_state(client, str(vid), "3", target_lcm_state="3", timeout=180) for vid in vm_ids]
+            )
+    finally:
+        cleanup_test_vms()
+
+
+@pytest.mark.asyncio
+async def test_manage_vm_invalid_space_separated_list(mcp_server):
+    """Passing space-separated IDs should be rejected as invalid."""
+    async with Client(mcp_server) as client:
+        result = await client.call_tool(
+            "manage_vm", {"vm_id": "1 2 3", "operation": "stop"}
+        )
+        output = result.content[0].text
+        assert "<error>" in output
+        assert "non-negative integer"
