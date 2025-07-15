@@ -573,10 +573,17 @@ def register_tools(mcp, allow_write):
         {VM_STATES_DESCRIPTION}
 
         Args:
-            vm_id: The target VM identifier(s). This can be:
-                • A single numeric ID (e.g., "42"). Only use this if you are sure you are targeting a single VM.
-                • A comma-separated list (e.g., "1,2,3") **or** a numeric range using the CLI syntax (e.g., "5..10").
-                  When multiple IDs are provided, you MUST invoke this tool **once** with the list/range. Per-VM state validation is skipped client-side; the OpenNebula backend enforces it and will reject only the non-eligible VMs while processing the rest.
+            vm_id: The target VM identifier(s). This must be a single string in one of the following formats:
+                • A single numeric ID (e.g., "42").
+                • A comma-separated list (e.g., "1,2,3").
+                • A numeric range (e.g., "5..10").
+
+                **CRITICAL ID NORMALIZATION**: If a user's request contains a mix of formats (e.g. "stop VMs 1,2 and 5 to 7"), you MUST normalize it into a single valid format before calling the tool. For example:
+                - "VMs 1,2 and 5 to 7" becomes a comma-separated list: "1,2,5,6,7".
+                - "VMs 1 through 5" becomes a range: "1..5".
+                Mixed formats like "1..2,3" or space-separated lists like "1 2 3" are INVALID and MUST be normalized or rejected.
+
+                When multiple IDs are provided, you MUST invoke this tool **once** with the normalized list/range. Per-VM state validation is skipped client-side; the OpenNebula backend enforces it and will reject only the non-eligible VMs while processing the rest.
 
             operation: Lifecycle action to perform. Supported values are:
                 - "start"  → maps to `onevm resume`
@@ -604,10 +611,8 @@ def register_tools(mcp, allow_write):
 
         Args:
             vm_id: The target VM identifier(s). This can be:
-                • A single numeric ID (e.g., "42"). In this case full state-validation is applied.
+                • A single numeric ID (e.g., "42").
                 • A comma-separated list (e.g., "1,2,3") **or** a numeric range using the CLI syntax (e.g., "5..10").
-                  When multiple IDs are provided, the underlying OpenNebula CLI is invoked **once** with the list/range and per-VM
-                  state checks are skipped (the CLI will refuse invalid state transitions by itself).
 
             operation: Lifecycle action to perform. Supported values are:
                 - "start"  → maps to `onevm resume`
