@@ -493,6 +493,7 @@ def register_tools(mcp, allow_write):
         Before calling this tool, ALWAYS perform these checks in the same turn:
         - vm_id validation
             - For terminate operations, this can be a single ID, a comma-separated list (e.g., "1,2,3"), or a range (e.g., "5..10"). For all other operations, it must be a single, non-negative integer ID.
+                - In case of terminate operation, YOU MUST pass the range (e.g., "5..10") instead of passing one vm_id at a time.
             - If the user supplies anything else (letters, symbols, negative numbers), DO NOT call manage_vm.
             - Instead, respond with a short apology and explain the input must be a non-negative integer.
         - operation validation
@@ -524,6 +525,7 @@ def register_tools(mcp, allow_write):
 
         Args:
             vm_id: For terminate operations, this can be a single ID, a comma-separated list (e.g., "1,2,3"), or a range (e.g., "5..10"). For all other operations, it must be a single, non-negative integer ID.
+                - In case of terminate operation, if the vm_id is a range, avoid passing one vm_id at a time, pass the range instead.
             operation: Lifecycle operation to perform (start, stop, reboot, terminate)
             hard: Whether to use hard/forced mode for applicable operations
 

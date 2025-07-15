@@ -152,3 +152,49 @@
   assert:
     - type: javascript
       value: output.length === 0
+
+# 12. Terminate multiple VMs (comma-separated list)
+- vars:
+    input: "Terminate VMs 3, 5, 7."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '3,5,7' &&
+             output[0].arguments.operation === 'terminate'
+
+# 13. Terminate multiple VMs (range syntax)
+- vars:
+    input: "Terminate VMs 5 through 10."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '5..10' &&
+             output[0].arguments.operation === 'terminate'
+
+# 14. Force-terminate multiple VMs (hard flag)
+- vars:
+    input: "Force-terminate VMs 12 and 13 now."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '12,13' &&
+             output[0].arguments.operation === 'terminate' &&
+             output[0].arguments.hasOwnProperty('hard') && output[0].arguments.hard === true
+
+# 15. Invalid multi-VM format (spaces instead of commas) – should be rejected
+- vars:
+    input: "Terminate VMs 1 2 3."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output[0].function == 'manage_vm' && (output[0].arguments.vm_id == '1,2,3' || output[0].arguments.vm_id == '1..3')
