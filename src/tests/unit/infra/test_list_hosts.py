@@ -1,47 +1,8 @@
 """Unit tests for infra.list_hosts filtering logic."""
 
 import xml.etree.ElementTree as ET
-import pytest
-from types import SimpleNamespace
-
 from src.tools.infra import infra as infra_module
-
-# ----------------------------------------------------------------------------
-# Helper: dummy MCP object to capture registered tool functions
-# ----------------------------------------------------------------------------
-
-class DummyMCP:
-    """Minimal stub that imitates FastMCP just enough for unit-testing.
-
-    FastMCP exposes a ``.tool`` decorator that registers a function.
-
-    """
-
-    def __init__(self):
-        # Tools will be stored as {name: function}
-        self.tools = {}
-
-    def tool(self, *, name: str, description: str):  # noqa: D401
-        """Return a *decorator* because Python expects it.
-
-        Decorator chain behind the syntax:
-            @mcp.tool(...)
-            def func(): ...
-
-        is equivalent to:
-            def func(): ...
-            func = mcp.tool(...)(func)
-
-        Therefore ``dummy.tool`` must *return* another function that
-        receives the new tool function, stores it, and then hands it
-        back unchanged."""
-
-        def decorator(fn):
-            self.tools[name] = fn
-            return fn
-
-        return decorator
-
+from src.tests.unit.conftest import DummyMCP
 
 def _get_list_hosts_func(monkeypatch, hosts_xml: str):
     """Register tools into DummyMCP and patch execute_one_command output."""
