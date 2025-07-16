@@ -12,16 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Unit tests for the instantiate_vm MCP tool.
-"""
+"""Integration tests for the instantiate_vm MCP tool."""
+
+import xml.etree.ElementTree as ET
 
 import fastmcp
 import pytest
 from fastmcp import Client
-import xml.etree.ElementTree as ET
-from src.tools.utils.base import execute_one_command
-from src.tests.pytest.utils import get_vm_id, search_for_pattern, cleanup_test_vms
+
+from src.tools.utils.base import execute_one_command  # noqa: F401 (potential future use)
+from src.tests.shared.utils import get_vm_id, search_for_pattern, cleanup_test_vms
+
+# Mark entire module as integration tests
+pytestmark = pytest.mark.integration
 
 
 @pytest.mark.asyncio
@@ -186,4 +189,4 @@ async def test_instantiate_vm_invalid_num_instances(mcp_server):
         )
         output = result.content[0].text
         assert "error" in output
-        cleanup_test_vms()
+        cleanup_test_vms() 

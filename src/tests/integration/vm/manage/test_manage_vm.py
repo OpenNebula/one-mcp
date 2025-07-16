@@ -12,12 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for the manage_vm tool in the VM module."""
+"""Integration tests for the manage_vm tool in the VM module."""
 
 import pytest
-from src.tools.utils.base import execute_one_command
-from src.tests.pytest.utils import get_vm_id, get_vm_ip, search_for_pattern, wait_for_state, cleanup_test_vms
 from fastmcp import Client
+from src.tools.utils.base import execute_one_command  # noqa: F401 (used implicitly)
+from src.tests.shared.utils import (
+    get_vm_id,
+    get_vm_ip,
+    search_for_pattern,
+    wait_for_state,
+    cleanup_test_vms,
+)
+
+# Mark the entire module as integration tests
+pytestmark = pytest.mark.integration
 
 
 @pytest.mark.asyncio
@@ -156,6 +165,7 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
     finally:
         cleanup_test_vms()
 
+
 @pytest.mark.asyncio
 async def test_manage_vm_hard_operations(mcp_server):
     """Test manage_vm hard flag functionality."""
@@ -220,4 +230,4 @@ async def test_manage_vm_hard_operations(mcp_server):
             print(f"Hard stopped VM {vm_id}")
 
     finally:
-        cleanup_test_vms()
+        cleanup_test_vms() 

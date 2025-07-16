@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Minimal logging tests focusing on core functionality."""
+"""Minimal logging tests focusing on core functionality (unit)."""
 
 import logging
 from pathlib import Path
 import pytest
 
 from src.logging_config import setup_logging, reset_logging_config
+
+# Mark entire module as unit tests
+pytestmark = pytest.mark.unit
 
 
 def cleanup_logs():
@@ -88,4 +91,4 @@ def test_file_content():
 
     content = log_files[0].read_text()
     assert "Test message" in content
-    assert "opennebula_mcp.test" in content
+    assert "opennebula_mcp.test" in content 

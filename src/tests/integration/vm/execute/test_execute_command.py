@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Test for execute_command tool using FastMCP in-memory testing."""
+"""Integration tests for the execute_command tool using FastMCP in-memory testing."""
 
 import pytest
 from fastmcp import Client
+
+# Mark module as integration tests
+pytestmark = pytest.mark.integration
 
 
 @pytest.mark.asyncio
@@ -157,4 +160,4 @@ async def test_execute_command_write_disabled(mcp_server_read_only):
             "execute_command",
             {"vm_ip_address": "127.0.0.1", "command": "echo 'test'"},
         )
-        assert "write operations are disabled" in result.content[0].text.lower()
+        assert "write operations are disabled" in result.content[0].text.lower() 
