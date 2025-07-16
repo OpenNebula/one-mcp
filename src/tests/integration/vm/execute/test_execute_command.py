@@ -157,4 +157,4 @@ async def test_execute_command_write_disabled(mcp_server_read_only):
             "execute_command",
             {"vm_ip_address": "127.0.0.1", "command": "echo 'test'"},
         )
-        assert "write operations are disabled" in result.content[0].text.lower() 
+        assert "write operations are disabled" in result.content[0].text.lower()

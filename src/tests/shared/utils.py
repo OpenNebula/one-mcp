@@ -42,10 +42,10 @@ def cleanup_test_vms():
         result = execute_one_command(["onevm", "list", "--list", "ID,NAME", "--csv"])
         if "error" not in result:
             cleaned_count = 0
-            for line in result.strip().split('\n'):
-                if line and 'test_vm_' in line:
+            for line in result.strip().split("\n"):
+                if line and "test_vm_" in line:
                     try:
-                        vm_id = line.split(',')[0].strip()
+                        vm_id = line.split(",")[0].strip()
                         if vm_id.isdigit():
                             execute_one_command(["onevm", "recover", "--delete", vm_id])
                             print(f"Cleaned up leftover test VM: {vm_id}")

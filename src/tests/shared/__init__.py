@@ -1,1 +1,1 @@
-# Shared helpers package 
+# Shared helpers package

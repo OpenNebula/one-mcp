@@ -20,6 +20,7 @@ import pytest
 
 from src.logging_config import setup_logging, reset_logging_config
 
+
 def cleanup_logs():
     """Clean up test log files from the tests subdirectory only."""
     test_log_dir = Path("log") / "tests"
@@ -87,4 +88,4 @@ def test_file_content():
 
     content = log_files[0].read_text()
     assert "Test message" in content
-    assert "opennebula_mcp.test" in content 
+    assert "opennebula_mcp.test" in content

@@ -86,7 +86,11 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
             # 1. Instantiate VM
             inst_out = await client.call_tool(
                 "instantiate_vm",
-                {"template_id": "0", "vm_name": "test_vm_manage_vm_lifecycle_operations", "network_name": "service"},
+                {
+                    "template_id": "0",
+                    "vm_name": "test_vm_manage_vm_lifecycle_operations",
+                    "network_name": "service",
+                },
             )
             inst_xml = inst_out.content[0].text
 
@@ -105,7 +109,8 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
             vm_ip = get_vm_ip(status_xml)
             assert vm_ip, f"Could not get IP for VM {vm_id} from XML:\n{status_xml}"
             exec_out = await client.call_tool(
-                "execute_command", {"vm_ip_address": vm_ip, "command": "nohup sleep 999 &"}
+                "execute_command",
+                {"vm_ip_address": vm_ip, "command": "nohup sleep 999 &"},
             )
             assert "<error>" not in exec_out.content[0].text
 
@@ -172,7 +177,11 @@ async def test_manage_vm_hard_operations(mcp_server):
             # 1. Instantiate VM
             inst_out = await client.call_tool(
                 "instantiate_vm",
-                {"template_id": "0", "vm_name": "test_vm_manage_vm_hard_operations", "network_name": "service"},
+                {
+                    "template_id": "0",
+                    "vm_name": "test_vm_manage_vm_hard_operations",
+                    "network_name": "service",
+                },
             )
             inst_xml = inst_out.content[0].text
 
@@ -191,7 +200,8 @@ async def test_manage_vm_hard_operations(mcp_server):
             vm_ip = get_vm_ip(status_xml)
             assert vm_ip, f"Could not get IP for VM {vm_id} from XML:\n{status_xml}"
             exec_out = await client.call_tool(
-                "execute_command", {"vm_ip_address": vm_ip, "command": "nohup sleep 999 &"}
+                "execute_command",
+                {"vm_ip_address": vm_ip, "command": "nohup sleep 999 &"},
             )
             assert "<error>" not in exec_out.content[0].text
 
@@ -227,4 +237,4 @@ async def test_manage_vm_hard_operations(mcp_server):
             print(f"Hard stopped VM {vm_id}")
 
     finally:
-        cleanup_test_vms() 
+        cleanup_test_vms()

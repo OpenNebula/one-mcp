@@ -51,4 +51,4 @@ def mcp_server_read_only():
 @pytest.fixture
 def test_vm_ip():
     """Provide the test VM IP address for VM-related tests."""
-    return TEST_VM_IP_ADDRESS 
+    return TEST_VM_IP_ADDRESS
