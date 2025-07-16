@@ -12,12 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for the manage_vm tool in the VM module."""
+"""Integration tests for the manage_vm tool in the VM module."""
 
 import pytest
-from src.tools.utils.base import execute_one_command
-from src.tests.pytest.utils import get_vm_id, get_vm_ip, search_for_pattern, wait_for_state, cleanup_test_vms
 from fastmcp import Client
+from src.tools.utils.base import execute_one_command  # noqa: F401 (used implicitly)
+from src.tests.shared.utils import (
+    get_vm_id,
+    get_vm_ip,
+    search_for_pattern,
+    wait_for_state,
+    cleanup_test_vms,
+)
 
 
 @pytest.mark.asyncio
@@ -80,7 +86,11 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
             # 1. Instantiate VM
             inst_out = await client.call_tool(
                 "instantiate_vm",
-                {"template_id": "0", "vm_name": "test_vm_manage_vm_lifecycle_operations", "network_name": "service"},
+                {
+                    "template_id": "0",
+                    "vm_name": "test_vm_manage_vm_lifecycle_operations",
+                    "network_name": "service",
+                },
             )
             inst_xml = inst_out.content[0].text
 
@@ -99,7 +109,8 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
             vm_ip = get_vm_ip(status_xml)
             assert vm_ip, f"Could not get IP for VM {vm_id} from XML:\n{status_xml}"
             exec_out = await client.call_tool(
-                "execute_command", {"vm_ip_address": vm_ip, "command": "nohup sleep 999 &"}
+                "execute_command",
+                {"vm_ip_address": vm_ip, "command": "nohup sleep 999 &"},
             )
             assert "<error>" not in exec_out.content[0].text
 
@@ -156,6 +167,7 @@ async def test_manage_vm_lifecycle_operations(mcp_server):
     finally:
         cleanup_test_vms()
 
+
 @pytest.mark.asyncio
 async def test_manage_vm_hard_operations(mcp_server):
     """Test manage_vm hard flag functionality."""
@@ -165,7 +177,11 @@ async def test_manage_vm_hard_operations(mcp_server):
             # 1. Instantiate VM
             inst_out = await client.call_tool(
                 "instantiate_vm",
-                {"template_id": "0", "vm_name": "test_vm_manage_vm_hard_operations", "network_name": "service"},
+                {
+                    "template_id": "0",
+                    "vm_name": "test_vm_manage_vm_hard_operations",
+                    "network_name": "service",
+                },
             )
             inst_xml = inst_out.content[0].text
 
@@ -184,7 +200,8 @@ async def test_manage_vm_hard_operations(mcp_server):
             vm_ip = get_vm_ip(status_xml)
             assert vm_ip, f"Could not get IP for VM {vm_id} from XML:\n{status_xml}"
             exec_out = await client.call_tool(
-                "execute_command", {"vm_ip_address": vm_ip, "command": "nohup sleep 999 &"}
+                "execute_command",
+                {"vm_ip_address": vm_ip, "command": "nohup sleep 999 &"},
             )
             assert "<error>" not in exec_out.content[0].text
 

@@ -227,10 +227,19 @@ def reset_logging_config() -> None:
     """
     global _logging_configured
 
-    # Remove all handlers from our root logger
+    # Remove **and close** all handlers attached to the project root logger
     root_logger = logging.getLogger("opennebula_mcp")
     for handler in root_logger.handlers[:]:
-        root_logger.removeHandler(handler)
+        try:
+            handler.flush()
+            handler.close()
+        finally:
+            root_logger.removeHandler(handler)
 
-    # Reset configuration state
+    # Also run the global shutdown to close any other remaining logging resources
+    # (e.g. handlers attached to other loggers). This is safe to call multiple
+    # times and ensures resource warnings do not appear at interpreter shutdown.
+    logging.shutdown()
+
+    # Reset configuration state so that setup_logging() can be called again
     _logging_configured = False

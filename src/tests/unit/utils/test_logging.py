@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Minimal logging tests focusing on core functionality."""
+"""Minimal logging tests focusing on core functionality (unit)."""
 
 import logging
 from pathlib import Path
