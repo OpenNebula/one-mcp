@@ -23,9 +23,6 @@ from fastmcp import Client
 from src.tools.utils.base import execute_one_command  # noqa: F401 (potential future use)
 from src.tests.shared.utils import get_vm_id, search_for_pattern, cleanup_test_vms
 
-# Mark entire module as integration tests
-pytestmark = pytest.mark.integration
-
 
 @pytest.mark.asyncio
 async def test_instantiate_vm_tool_exists(mcp_server):

@@ -17,9 +17,6 @@
 import pytest
 from fastmcp import Client
 
-# Mark module as integration tests
-pytestmark = pytest.mark.integration
-
 
 @pytest.mark.asyncio
 async def test_execute_command_tool_exists(mcp_server):

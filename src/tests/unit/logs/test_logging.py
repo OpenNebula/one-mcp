@@ -20,10 +20,6 @@ import pytest
 
 from src.logging_config import setup_logging, reset_logging_config
 
-# Mark entire module as unit tests
-pytestmark = pytest.mark.unit
-
-
 def cleanup_logs():
     """Clean up test log files from the tests subdirectory only."""
     test_log_dir = Path("log") / "tests"

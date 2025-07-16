@@ -25,9 +25,6 @@ from src.tests.shared.utils import (
     cleanup_test_vms,
 )
 
-# Mark the entire module as integration tests
-pytestmark = pytest.mark.integration
-
 
 @pytest.mark.asyncio
 async def test_manage_vm_tool_exists(mcp_server):
