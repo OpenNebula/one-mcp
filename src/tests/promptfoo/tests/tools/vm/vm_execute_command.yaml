@@ -6,7 +6,6 @@
   options:
     transform: file://transforms/extract_function_call.js
   assert:
-    # Expect get_vm_status followed by execute_command with non-interactive flags
     - type: javascript
       value: output.length === 1
     - type: javascript

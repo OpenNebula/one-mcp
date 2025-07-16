@@ -149,3 +149,34 @@
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'get_vm_status'
+
+# VM get_vm_status tool tests for multiple VM IDs
+- vars:
+    input: "Get VM status for VMs 1,2,3"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'get_vm_status'
+    - type: javascript
+      value: output[0].arguments.vm_id === '1,2,3'
+
+- vars:
+    input: "Get VM status for VM 1 through 10"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'get_vm_status'
+    - type: javascript
+      value: output[0].arguments.vm_id === '1,2,3,4,5,6,7,8,9,10'
+
+- vars:
+    input: "Get VM status from 5 to 3 and from 3 to 1"
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'get_vm_status'
+    - type: javascript
+      value: output[0].arguments.vm_id === '1,2,3,4,5'

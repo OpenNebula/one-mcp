@@ -38,37 +38,97 @@ def register_tools(mcp, allow_write):
 
     @mcp.tool(
         name="get_vm_status",
-        description=f"""Retrieve current state, IP address, and runtime metrics of a VM. 
-        It is possible to pass the vm_id as a string representing a non-negative integer otherwise you cannot use the tool
-        Before calling this tool, ALWAYS perform these checks in the same turn:
-        - vm_id validation
-            - Accept only strings that represent non-negative integers (e.g. "0", "42").
-            - If the user supplies anything else (letters, symbols, negative numbers), DO NOT call manage_vm.
-            - Instead, respond with a short apology and explain the input must be a non-negative integer.
+        description=f"""Retrieve current state, IP address, and runtime metrics of one or more VMs.
+
+        vm_id MUST be provided as **a single string** that contains one or more **comma-separated** non-negative
+        integers, forming a **list** of IDs. Always supply a list – even when you
+        need the status of a single VM. For example:
+
+            • "42"            → list with one VM ID (42)
+            • "1,2,3"         → list with three VM IDs (1, 2 and 3)
+
+        IMPORTANT: Ranges (e.g. "5..10") or mixed separators (spaces, semicolons, etc.) are **NOT** supported – keep the
+        approach simple and only use commas. If any element of the list is not a non-negative integer, the call must be
+        rejected with an explanatory error.
+
+        Before calling this tool you MUST validate **every** ID in the list:
+            - Each part after splitting on "," must be composed solely of digits and represent a non-negative integer.
+            - If a user expresses a **range** in natural language (e.g. "5 to 3" or "1-10"), you MUST **expand** that
+              range yourself before calling this tool. Produce an **ascending** comma-separated list with
+              no duplicates ("5 to 3" → "3,4,5", "1-4" → "1,2,3,4"). Only after expansion should you invoke
+              `get_vm_status`.
+            - If multiple ranges or individual IDs are mentioned in the same request, **merge** them into a single
+              set, remove duplicates, sort ascending, and pass as one comma-separated string (e.g. "5 to 3 and 3 to 1"
+              → "1,2,3,4,5"). Only ONE call to `get_vm_status` is allowed per user request.
+            - After expansion, if any element is not a non-negative integer, respond with an error and DO NOT perform the OpenNebula call.
+
+        For multiple IDs the tool will return an <VMS> root element containing the XML description of each VM exactly as
+        returned by `onevm show <id> --xml`.
         {VM_STATES_DESCRIPTION}
         {VM_TEMPLATE_DESCRIPTION}
+        
+        **CALLING RULES (MANDATORY)**:
+            • When a user requests the status of several VMs you MUST issue **one and only one** call to this tool.
+              Consolidate all requested IDs into the `vm_id` argument as a comma-separated string (e.g. `"1,2,3"`).
+            • Do **NOT** loop or invoke `get_vm_status` repeatedly for each ID – that violates protocol and
+              wastes resources. Always batch the IDs into a single call.
         """,
     )
     def get_vm_status(vm_id: str) -> str:
-        """Retrieve full details for a specific VM.
-        Args:
-            vm_id: The integer ID of the virtual machine.
-        Returns:
-            str: XML string conforming to the VM XSD Schema.
-        """
-        logger.debug(f"Getting VM status for VM ID: {vm_id}")
+        """Retrieve full details for one or more VMs.
 
-        if not vm_id.isdigit() and int(vm_id) <= 0:
-            logger.error(f"Invalid VM ID provided: {vm_id} (must be positive integer)")
-            return "<error><message>vm_id must be a positive integer</message></error>"
+        Args:
+            vm_id: A **comma-separated** string of VM IDs (e.g. "1" or "1,2,3").
+
+        Returns:
+            str: XML string. For a single VM, the raw `<VM>` element returned by OpenNebula. For multiple VMs, a root
+                 `<VMS>` element containing each individual `<VM>` child.
+        """
+
+        logger.debug(f"Getting VM status for VM ID(s): {vm_id}")
+
+        # Split by comma and validate each part
+        id_parts = [part.strip() for part in vm_id.split(',') if part.strip()]
+
+        if not id_parts:
+            logger.error("vm_id parameter is empty after parsing")
+            return "<error><message>vm_id must contain at least one non-negative integer</message></error>"
+
+        for part in id_parts:
+            if not part.isdigit():
+                logger.error(f"Invalid VM ID provided: {part} (must be non-negative integer)")
+                return (
+                    "<error><message>All vm_id values must be non-negative integers separated by commas</message></error>"
+                )
 
         try:
-            result = execute_one_command(["onevm", "show", vm_id, "--xml"])
-            logger.debug(f"Successfully retrieved VM status for VM {vm_id}")
-            return result
+            if len(id_parts) == 1:
+                # Single VM – return raw XML as-is
+                single_id = id_parts[0]
+                result = execute_one_command(["onevm", "show", single_id, "--xml"])
+                logger.debug(f"Successfully retrieved VM status for VM {single_id}")
+                return result
+
+            # Multiple VMs – aggregate under <VMS>
+            root = ET.Element("VMS")
+            for vmid in id_parts:
+                try:
+                    vm_xml = execute_one_command(["onevm", "show", vmid, "--xml"])
+                    vm_element = ET.fromstring(vm_xml)
+                    root.append(vm_element)
+                    logger.debug(f"Added VM {vmid} status to aggregate output")
+                except Exception as e:
+                    logger.error(f"Failed to get VM status for VM {vmid}: {e}")
+                    # Include an <error> element for this VM instead of failing entire request
+                    err_el = ET.SubElement(root, "error")
+                    ET.SubElement(err_el, "vm_id").text = vmid
+                    ET.SubElement(err_el, "message").text = str(e)
+
+            return ET.tostring(root, encoding="unicode")
+
         except Exception as e:
-            logger.error(f"Failed to get VM status for VM {vm_id}: {e}")
-            raise
+            logger.error(f"Unexpected error while retrieving VM status: {e}")
+            return f"<error><message>{e}</message></error>"
 
     @mcp.tool(
         name="execute_command",

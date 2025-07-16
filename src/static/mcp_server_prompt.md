@@ -76,6 +76,12 @@ The `execute_command` tool implements a mandatory safety analysis protocol:
 ### Virtual Machine Management
 - `list_vms`: List all virtual machines with optional filtering
 - `get_vm_status`: Get detailed VM status, IP addresses, and metrics
+    - When requesting the status of **multiple VMs**, you MUST make **one** call and
+      pass all IDs as a single comma-separated string in the `vm_id` argument
+      (e.g. `get_vm_status(vm_id="1,2,3")`). Calling the tool repeatedly for
+      each ID is prohibited.
+    - If the user provides multiple ranges or individual IDs in one request (e.g. "5 to 3 and 3 to 1"), **merge**
+      everything into a single ascending list without duplicates (result: "1,2,3,4,5") and call the tool once.
 - `execute_command`: Execute shell commands with comprehensive safety analysis. It can be used to run commands inside the VMs and you need to pass the vm_id argument.
 ## Best Practices
 
