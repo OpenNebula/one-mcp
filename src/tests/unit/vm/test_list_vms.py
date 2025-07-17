@@ -11,6 +11,10 @@ def _tool(monkeypatch):
 
 def test_list_vms_invalid_filters(monkeypatch):
     list_vms = _tool(monkeypatch)
+
+    # state non-digit -> error
+    out = list_vms(state="abc", host_id=None, cluster_id=None)
+    assert out.startswith("<error>")
     # host_id non-digit -> error
     out = list_vms(state=None, host_id="abc", cluster_id=None)
     assert out.startswith("<error>")

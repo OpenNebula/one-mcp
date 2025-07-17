@@ -19,6 +19,7 @@ def test_execute_command_write_disabled(monkeypatch):
 def test_execute_command_write_enabled(monkeypatch):
     execute_command = _tool(monkeypatch, allow_write=True)
     out = execute_command("192.168.1.1", "echo hi")
+    assert "ssh root@192.168.1.1" in out
     assert "echo hi" in out
 
 
