@@ -8,14 +8,16 @@ from src.tests.unit.conftest import register_infra_tools
 def test_list_images_cli(monkeypatch):
     captured = {}
 
+    xml_out = "<IMAGE_POOL></IMAGE_POOL>"
+
     def fake(cmd_parts, *a, **k):
         captured["cmd"] = cmd_parts
-        return "<images/>"
+        return xml_out
 
-    tools = register_infra_tools(monkeypatch, xml_out="<images/>")
+    tools = register_infra_tools(monkeypatch, xml_out=xml_out)
     monkeypatch.setattr(
         "src.tools.infra.infra.execute_one_command", fake, raising=True
     )
 
-    assert tools["list_images"]() == "<images/>"
+    assert tools["list_images"]() == xml_out
     assert captured["cmd"] == ["oneimage", "list", "--xml"] 

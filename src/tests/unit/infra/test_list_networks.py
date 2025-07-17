@@ -8,14 +8,16 @@ from src.tests.unit.conftest import register_infra_tools
 def test_list_networks_cli(monkeypatch):
     captured = {}
 
+    xml_out = "<VNET_POOL></VNET_POOL>"
+
     def fake(cmd_parts, *a, **k):
         captured["cmd"] = cmd_parts
-        return "<vnet_pool/>"
+        return xml_out
 
-    tools = register_infra_tools(monkeypatch, xml_out="<vnet_pool/>")
+    tools = register_infra_tools(monkeypatch, xml_out=xml_out)
     monkeypatch.setattr(
         "src.tools.infra.infra.execute_one_command", fake, raising=True
     )
 
-    assert tools["list_networks"]() == "<vnet_pool/>"
+    assert tools["list_networks"]() == xml_out
     assert captured["cmd"] == ["onevnet", "list", "--xml"] 
