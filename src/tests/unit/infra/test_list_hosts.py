@@ -2,27 +2,12 @@
 
 import xml.etree.ElementTree as ET
 from src.tools.infra import infra as infra_module
-from src.tests.unit.conftest import DummyMCP
+from src.tests.unit.conftest import register_infra_tools
+
 
 def _get_list_hosts_func(monkeypatch, hosts_xml: str):
-    """Register tools into DummyMCP and patch execute_one_command output."""
-
-    dummy = DummyMCP()
-
-    # 1. Stub out execute_one_command **inside** infra.py so when the
-    #    list_hosts function is defined, it will already reference the
-    #    fake implementation that returns our XML fixture.  This avoids any
-    #    real subprocess calls.
-    monkeypatch.setattr(
-        infra_module, "execute_one_command", lambda *args, **kwargs: hosts_xml
-    )
-
-    # 2. Run the normal registration code, which will create the list_hosts
-    #    function and store it in dummy.tools via the decorator above.
-    infra_module.register_tools(dummy)
-
-    # 3. Return the plain Python function so tests can call it directly.
-    return dummy.tools["list_hosts"]
+    tools = register_infra_tools(monkeypatch, hosts_xml)
+    return tools["list_hosts"]
 
 
 # ----------------------------------------------------------------------------
