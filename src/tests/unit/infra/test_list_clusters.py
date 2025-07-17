@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.tests.unit.conftest import register_infra_tools
+from src.tests.unit.conftest import register_tools
 
 
 def test_list_clusters_happy_path(monkeypatch):
@@ -19,7 +19,7 @@ def test_list_clusters_happy_path(monkeypatch):
         return xml_out
 
     # Register tools with our spy
-    tools = register_infra_tools(monkeypatch, xml_out=xml_out)
+    tools = register_tools(monkeypatch, "src.tools.infra.infra", xml_out=xml_out)
     monkeypatch.setattr(
         "src.tools.infra.infra.execute_one_command", fake_exec, raising=True
     )

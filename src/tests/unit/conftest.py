@@ -28,22 +28,22 @@ class DummyMCP:
 # Helper to register infra tools quickly
 # ---------------------------------------------------------------------------
 
-def register_infra_tools(monkeypatch: pytest.MonkeyPatch, xml_out: str = "<xml/>"):
-    """Return a dict of infra tools with *execute_one_command* stubbed.
-
-    Usage::
-
-        tools = register_infra_tools(monkeypatch, "<xml/>")
-        output = tools["list_clusters"]()
+def register_tools(monkeypatch, module_path: str, xml_out: str = "<xml/>"):
     """
-    from src.tools.infra import infra as infra_module  # local import to avoid cycles
+    Register all tools defined in *module_path* with a DummyMCP instance,
+    while patching that module's ``execute_one_command`` to return *xml_out*.
+
+    Example:
+        tools = register_tools(monkeypatch, "src.tools.infra.infra")
+        tools = register_tools(monkeypatch, "src.tools.templates.templates")
+    """
+    import importlib
+
+    module = importlib.import_module(module_path)
 
     dummy = DummyMCP()
-    monkeypatch.setattr(
-        infra_module,
-        "execute_one_command",
-        lambda *args, **kwargs: xml_out,
-        raising=True,
-    )
-    infra_module.register_tools(dummy)
+    monkeypatch.setattr(module, "execute_one_command",
+                        lambda *a, **k: xml_out,
+                        raising=True)
+    module.register_tools(dummy)
     return dummy.tools

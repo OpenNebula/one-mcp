@@ -2,11 +2,11 @@
 
 import xml.etree.ElementTree as ET
 from src.tools.infra import infra as infra_module
-from src.tests.unit.conftest import register_infra_tools
+from src.tests.unit.conftest import register_tools
 
 
 def _get_list_hosts_func(monkeypatch, hosts_xml: str):
-    tools = register_infra_tools(monkeypatch, hosts_xml)
+    tools = register_tools(monkeypatch, "src.tools.infra.infra", hosts_xml)
     return tools["list_hosts"]
 
 

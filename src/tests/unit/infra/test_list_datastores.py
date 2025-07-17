@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.tests.unit.conftest import register_infra_tools
+from src.tests.unit.conftest import register_tools
 
 
 def test_list_datastores_cli(monkeypatch):
@@ -12,9 +12,9 @@ def test_list_datastores_cli(monkeypatch):
 
     def fake(cmd_parts, *a, **k):
         captured["cmd"] = cmd_parts
-        return xml_out
+        return xml_out  
 
-    tools = register_infra_tools(monkeypatch, xml_out=xml_out)
+    tools = register_tools(monkeypatch, "src.tools.infra.infra", xml_out=xml_out)
     monkeypatch.setattr(
         "src.tools.infra.infra.execute_one_command", fake, raising=True
     )
