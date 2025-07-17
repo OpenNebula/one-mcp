@@ -57,8 +57,12 @@ def register_tools(mcp, allow_write):
             str: XML string conforming to the VM XSD Schema.
         """
         logger.debug(f"Getting VM status for VM ID: {vm_id}")
-
-        if not vm_id.isdigit() and int(vm_id) <= 0:
+        
+        if not vm_id.isdigit():
+            logger.error(f"Invalid VM ID provided: {vm_id} (must be positive integer)")
+            return "<error><message>vm_id must be a positive integer</message></error>"
+        
+        if int(vm_id) <= 0:
             logger.error(f"Invalid VM ID provided: {vm_id} (must be positive integer)")
             return "<error><message>vm_id must be a positive integer</message></error>"
 
