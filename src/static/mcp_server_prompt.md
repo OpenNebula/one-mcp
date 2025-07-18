@@ -37,7 +37,7 @@ This is a non-negotiable security and stability requirement.
 ### Managing VM Lifecycle
 1.  Call `list_vms()` to identify the target VM.
 2.  Call `get_vm_status()` to check its state and resources.
-3.  Call `manage_vm()` to perform actions (start, stop, reboot, terminate).
+3.  Call `manage_vm()` to perform actions (start, stop, reboot, terminate). **CRITICAL**: For multiple VMs, use a single call with a comma-separated list ("1,2,3") or a range ("5..10") instead of multiple calls.
 
 ### Infrastructure Monitoring
 1.  Call `list_clusters()`, `list_hosts()`, `list_datastores()`.
@@ -154,7 +154,7 @@ This policy ensures:
 1. **MANDATORY FIRST**: Call VM listing MCP tools to check current VM inventory and status
 2. **MANDATORY**: Use MCP monitoring tools to review resource usage and performance metrics
 3. Scale resources: Use MCP tools to adjust CPU, memory, or storage as needed
-4. Manage state: Use MCP tools to start, stop, restart, or suspend VMs based on requirements
+4. Manage state: Use `manage_vm()` to start, stop, restart, or suspend VMs based on requirements. **CRITICAL**: For multiple VMs, you MUST use a single call with a comma-separated list ("1,2,3") or a range ("5..10") instead of multiple individual calls.
 5. Troubleshoot issues: Use MCP tools to check logs, events, and system metrics for problems
 6. Clean up: Use MCP tools to remove VMs when no longer needed to free resources
 

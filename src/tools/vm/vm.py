@@ -15,8 +15,9 @@
 """VM management tools for OpenNebula MCP Server."""
 
 from logging import getLogger
+import re
 import xml.etree.ElementTree as ET
-from typing import Optional
+from typing import Optional, List
 
 from src.static import (
     VM_STATES_DESCRIPTION,
@@ -27,6 +28,74 @@ from src.tools.utils.base import execute_one_command, is_valid_ip_address
 
 # Module logger
 logger = getLogger("opennebula_mcp.vm")
+
+# ---------------------------------------------------------------------------
+# Shared constants and helpers (internal use)
+# ---------------------------------------------------------------------------
+
+CMD_MAP = {
+    "start": "resume",
+    "stop": "poweroff",
+    "reboot": "reboot",
+    "terminate": "terminate",
+}
+
+# Valid state transitions for single-VM validation
+STATE_VALIDATIONS = {
+    "start": {
+        "valid_states": [4, 5, 8, 9],
+        "valid_lcm_states": [16],
+        "error_msg": "VM must be in STOPPED, SUSPENDED, UNDEPLOYED or POWEROFF state to start",
+    },
+    "stop": {
+        "valid_states": [3],
+        "valid_lcm_states": [3],
+        "error_msg": "VM must be in RUNNING state to stop",
+    },
+    "reboot": {
+        "valid_states": [3],
+        "valid_lcm_states": [3],
+        "error_msg": "VM must be in RUNNING state to reboot",
+    },
+    "terminate": {
+        "valid_states": [1, 2, 3, 4, 5, 8, 9, 10, 11],
+        "error_msg": "Cannot terminate VM state. Check its state with the get_vm_status tool.",
+    },
+}
+
+
+def _is_multi_vm(vm_id: str) -> bool:
+    """Return True if vm_id string denotes a comma-separated list or numeric range."""
+    return "," in vm_id or ".." in vm_id
+
+
+def _build_cmd_parts(operation: str, vm_id: str, hard: bool) -> List[str]:
+    """Construct the onevm CLI command for the requested lifecycle action."""
+    cmd_parts: List[str] = ["onevm", CMD_MAP[operation]]
+
+    # --hard flag only meaningful for the following operations
+    if hard and operation in ("stop", "reboot", "terminate"):
+        cmd_parts.append("--hard")
+
+    cmd_parts.append(vm_id)
+    return cmd_parts
+
+
+def _wrap_success_xml(vm_id: str, operation: str, hard: bool, result: str, multi: bool) -> str:
+    """Return a <result> XML envelope with command output."""
+    success_root = ET.Element("result")
+    ET.SubElement(success_root, "vm_id").text = vm_id
+    ET.SubElement(success_root, "operation").text = operation
+    ET.SubElement(success_root, "hard").text = str(hard)
+
+    if multi:
+        message = f"VMs {vm_id} {operation} operation executed successfully"
+    else:
+        message = f"VM {operation} operation executed successfully"
+
+    ET.SubElement(success_root, "message").text = message
+    ET.SubElement(success_root, "command_output").text = result.strip()
+    return ET.tostring(success_root, encoding="unicode")
 
 
 def register_tools(mcp, allow_write):
@@ -515,9 +584,12 @@ def register_tools(mcp, allow_write):
         name="manage_vm",
         description=f"""Manages the lifecycle state of an OpenNebula virtual machine. Use this tool to perform power operations (start, stop, reboot) or to permanently delete a VM.
         
+        IMPORTANT: If you need to perform the same lifecycle action on *several* VMs, you **MUST** batch them into a *single* call using either a comma-separated list (e.g., "1,2,3") or an OpenNebula numeric range (e.g., "5..10").
+        Never loop over individual IDs or emit multiple `manage_vm` calls – it wastes API calls and increases race-condition risk. The OpenNebula CLI natively supports lists/ranges and will process each VM atomically, skipping invalid ones without blocking the rest.
+
         Before calling this tool, ALWAYS perform these checks in the same turn:
         - vm_id validation
-            - Accept only strings that represent non-negative integers (e.g. "0", "42").
+            - For all supported operations you MAY pass a single ID *or* a list/range. Batch mode (list/range) is strongly preferred whenever more than one VM is targeted.
             - If the user supplies anything else (letters, symbols, negative numbers), DO NOT call manage_vm.
             - Instead, respond with a short apology and explain the input must be a non-negative integer.
         - operation validation
@@ -527,9 +599,25 @@ def register_tools(mcp, allow_write):
         {VM_STATES_DESCRIPTION}
 
         Args:
-            vm_id: VM ID as string but it must be IT MUST BE A NON-NEGATIVE INTEGER otherwise you cannot call this tool
-            operation: Lifecycle operation to perform (start, stop, reboot, terminate)
-            hard: Whether to use hard/forced mode for applicable operations
+            vm_id: The target VM identifier(s). This must be a single string in one of the following formats:
+                • A single numeric ID (e.g., "42").
+                • A comma-separated list (e.g., "1,2,3").
+                • A numeric range (e.g., "5..10").
+
+                **CRITICAL ID NORMALIZATION**: If a user's request contains a mix of formats (e.g. "stop VMs 1,2 and 5 to 7"), you MUST normalize it into a single valid format before calling the tool. For example:
+                - "VMs 1,2 and 5 to 7" becomes a comma-separated list: "1,2,5,6,7".
+                - "VMs 1 through 5" becomes a range: "1..5".
+                Mixed formats like "1..2,3" or space-separated lists like "1 2 3" are INVALID and MUST be normalized or rejected.
+
+                When multiple IDs are provided, you MUST invoke this tool **once** with the normalized list/range. Per-VM state validation is skipped client-side; the OpenNebula backend enforces it and will reject only the non-eligible VMs while processing the rest.
+
+            operation: Lifecycle action to perform. Supported values are:
+                - "start"  → maps to `onevm resume`
+                - "stop"   → maps to `onevm poweroff`
+                - "reboot" → maps to `onevm reboot`
+                - "terminate" → maps to `onevm terminate`
+
+            hard: When `True`, adds `--hard` to poweroff, reboot and terminate commands. Ignored for resume.
 
         Available operations:
         - start: Start a VM (from STOPPED, POWEROFF, SUSPENDED, UNDEPLOYED states)
@@ -548,9 +636,17 @@ def register_tools(mcp, allow_write):
         """Manage VM lifecycle operations with state validation.
 
         Args:
-            vm_id: VM ID as string
-            operation: Lifecycle operation to perform (start, stop, reboot, terminate)
-            hard: Whether to use hard/forced mode for applicable operations
+            vm_id: The target VM identifier(s). This can be:
+                • A single numeric ID (e.g., "42").
+                • A comma-separated list (e.g., "1,2,3") **or** a numeric range using the CLI syntax (e.g., "5..10").
+
+            operation: Lifecycle action to perform. Supported values are:
+                - "start"  → maps to `onevm resume`
+                - "stop"   → maps to `onevm poweroff`
+                - "reboot" → maps to `onevm reboot`
+                - "terminate" → maps to `onevm terminate`
+
+            hard: When `True`, adds `--hard` to poweroff, reboot and terminate commands. Ignored for resume.
 
         Returns:
             str: XML string with operation result or error message
@@ -562,17 +658,33 @@ def register_tools(mcp, allow_write):
             )
             return "<error><message>Write operations are disabled on this MCP instance.</message></error>"
 
-        if not vm_id.isdigit() or int(vm_id) < 0:
-            logger.error(f"Invalid VM ID provided: {vm_id}")
-            return (
-                "<error><message>vm_id must be a non-negative integer</message></error>"
-            )
-
         valid_operations = ["start", "stop", "reboot", "terminate"]
         operation = operation.strip().lower()
         if operation not in valid_operations:
             logger.error(f"Invalid operation: {operation}")
             return f"<error><message>Invalid operation '{operation}'. Valid operations: {', '.join(valid_operations)}</message></error>"
+
+        # Multi-VM handling (comma list or range)
+        is_multi_vm = _is_multi_vm(vm_id)
+        if is_multi_vm:
+            cmd_parts = _build_cmd_parts(operation, vm_id, hard)
+
+            logger.debug(f"Executing multi-VM {operation} command: {' '.join(cmd_parts)}")
+            try:
+                result = execute_one_command(cmd_parts)
+
+                return _wrap_success_xml(vm_id, operation, hard, result, True)
+
+            except Exception as e:
+                logger.error(f"Failed to execute multi-VM {operation} for {vm_id}: {e}")
+                return f"<error><message>Failed to execute multi-VM {operation}: {e}</message></error>"
+
+        # Single VM operation logic
+        if not vm_id.isdigit() or int(vm_id) < 0:
+            logger.error(f"Invalid VM ID provided: {vm_id}")
+            return (
+                "<error><message>vm_id must be a non-negative integer</message></error>"
+            )
 
         # Get current VM status
         logger.debug(f"Getting current status for VM {vm_id} before {operation}")
@@ -603,33 +715,7 @@ def register_tools(mcp, allow_write):
             return f"<error><message>Failed to parse VM status: {e}</message></error>"
 
         # State validation and operation mapping
-        state_validations = {
-            "start": {
-                "valid_states": [4, 5, 8, 9],
-                "valid_lcm_states": [16],
-                "error_msg": "VM must be in STOPPED, SUSPENDED, UNDEPLOYED or POWEROFF state to start",
-                "command": "resume",
-            },
-            "stop": {
-                "valid_states": [3],
-                "valid_lcm_states": [3],
-                "error_msg": "VM must be in RUNNING state to stop",
-                "command": "poweroff",
-            },
-            "reboot": {
-                "valid_states": [3],
-                "valid_lcm_states": [3],
-                "error_msg": "VM must be in RUNNING state to reboot",
-                "command": "reboot",
-            },
-            "terminate": {
-                "valid_states": [1, 2, 3, 4, 5, 8, 9, 10, 11],
-                "error_msg": "Cannot terminate VM state. Check its state with the get_vm_status tool.",
-                "command": "terminate",
-            },
-        }
-
-        validation = state_validations.get(operation)
+        validation = STATE_VALIDATIONS.get(operation)
         if not validation:
             return f"<error><message>Unknown operation: {operation}</message></error>"
 
@@ -648,19 +734,8 @@ def register_tools(mcp, allow_write):
                 )
                 return f"<error><message>{validation['error_msg']} (current LCM state: {current_lcm})</message></error>"
 
-        # Build command with special cases
-        base_command = validation["command"]
-
-        cmd_parts = ["onevm", base_command, vm_id]
-
-        # Add hard flag for applicable operations
-        if hard and operation in ["stop", "terminate", "reboot"]:
-            if operation == "stop":
-                cmd_parts = ["onevm", "poweroff", "--hard", vm_id]
-            elif operation == "terminate":
-                cmd_parts = ["onevm", "terminate", "--hard", vm_id]
-            elif operation == "reboot":
-                cmd_parts = ["onevm", "reboot", "--hard", vm_id]
+        # Build CLI command for single-VM actions
+        cmd_parts = _build_cmd_parts(operation, vm_id, hard)
 
         logger.debug(f"Executing VM {operation} command: {' '.join(cmd_parts)}")
 
@@ -670,16 +745,7 @@ def register_tools(mcp, allow_write):
             logger.info(f"VM {vm_id} {operation} operation completed")
 
             # Return success message in XML format
-            success_root = ET.Element("result")
-            ET.SubElement(success_root, "vm_id").text = vm_id
-            ET.SubElement(success_root, "operation").text = operation
-            ET.SubElement(success_root, "hard").text = str(hard)
-            ET.SubElement(
-                success_root, "message"
-            ).text = f"VM {operation} operation executed successfully"
-            ET.SubElement(success_root, "command_output").text = result.strip()
-
-            return ET.tostring(success_root, encoding="unicode")
+            return _wrap_success_xml(vm_id, operation, hard, result, False)
 
         except Exception as e:
             logger.error(f"Failed to execute {operation} on VM {vm_id}: {e}")

@@ -152,3 +152,161 @@
   assert:
     - type: javascript
       value: output.length === 0
+
+# 12. Terminate multiple VMs (comma-separated list)
+- vars:
+    input: "Terminate VMs 3, 5, 7."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '3,5,7' &&
+             output[0].arguments.operation === 'terminate'
+
+# 13. Terminate multiple VMs (range syntax)
+- vars:
+    input: "Terminate VMs 5 through 10."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '5..10' &&
+             output[0].arguments.operation === 'terminate'
+
+# 14. Force-terminate multiple VMs (hard flag)
+- vars:
+    input: "Force-terminate VMs 12 and 13 now."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '12,13' &&
+             output[0].arguments.operation === 'terminate' &&
+             output[0].arguments.hasOwnProperty('hard') && output[0].arguments.hard === true
+
+# 15. Invalid multi-VM format (spaces instead of commas)
+- vars:
+    input: "Terminate VMs id: 1 2 3."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output[0].function == 'manage_vm' && (output[0].arguments.vm_id == '1,2,3' || output[0].arguments.vm_id == '1..3')
+
+# 16. Stop multiple VMs (comma-list)
+- vars:
+    input: "Power off VMs 3,4,5."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '3,4,5' &&
+             output[0].arguments.operation === 'stop'
+
+# 17. Stop multiple VMs (range syntax)
+- vars:
+    input: "Power off VMs 10 through 15."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '10..15' &&
+             output[0].arguments.operation === 'stop'
+
+# 18. Hard-stop multiple VMs
+- vars:
+    input: "Force power off VMs 7,8,9 immediately."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '7,8,9' &&
+             output[0].arguments.operation === 'stop' &&
+             output[0].arguments.hasOwnProperty('hard') && output[0].arguments.hard === true
+
+# 19. Start multiple VMs (comma-list)
+- vars:
+    input: "Start VMs 20,21,22."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '20,21,22' &&
+             output[0].arguments.operation === 'start'
+
+# 20. Start multiple VMs (range syntax)
+- vars:
+    input: "Start VMs 25 through 30."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '25..30' &&
+             output[0].arguments.operation === 'start'
+
+# 21. Reboot multiple VMs (comma-list)
+- vars:
+    input: "Reboot VMs 31,32,33."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '31,32,33' &&
+             output[0].arguments.operation === 'reboot'
+
+# 22. Hard-reboot multiple VMs (range)
+- vars:
+    input: "Force reboot VMs 40 through 45 immediately."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '40..45' &&
+             output[0].arguments.operation === 'reboot' &&
+             output[0].arguments.hasOwnProperty('hard') && output[0].arguments.hard === true
+
+# 23. Mixed operations with multi-VM (should split into separate calls)
+- vars:
+    input: "Start VMs 50,51 and terminate VMs 52 through 54."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 2 &&
+             output[0].function === 'manage_vm' &&
+             output[0].arguments.vm_id === '50,51' &&
+             output[0].arguments.operation === 'start' &&
+             output[1].function === 'manage_vm' &&
+             output[1].arguments.vm_id === '52..54' &&
+             output[1].arguments.operation === 'terminate'
+
+# 24. Invalid multi-VM format with mixed delimiters
+- vars:
+    input: "Stop VMs 60..61,62."
+  options:
+    transform: file://transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 0 || 
+             (output[0].function === 'manage_vm' && 
+              (output[0].arguments.vm_id === '60..62' || output[0].arguments.vm_id === '60,61,62'))
