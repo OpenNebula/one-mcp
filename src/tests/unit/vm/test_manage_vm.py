@@ -55,3 +55,63 @@ def test_manage_vm_successful_terminate(monkeypatch):
     assert "<operation>terminate</operation>" in out
     assert "<hard>True</hard>" in out
     assert "VM terminate operation executed successfully" in out
+
+
+def test_manage_vm_zero_id_spec_conformance(monkeypatch):
+    """Test that manage_vm handles VM ID '0' according to spec (should be valid non-negative integer)."""
+    manage_vm = _tool(monkeypatch)
+    
+    out = manage_vm(vm_id="0", operation="terminate")
+    
+    # Current implementation should accept "0" per the spec
+    assert "<result>" in out
+    assert "<vm_id>0</vm_id>" in out
+    assert "<operation>terminate</operation>" in out
+
+
+def test_manage_vm_xml_error_structure_invalid_id(monkeypatch):
+    """Test that manage_vm returns properly structured error XML for invalid VM IDs."""
+    manage_vm = _tool(monkeypatch)
+    
+    out = manage_vm(vm_id="invalid", operation="start")
+    
+    # Verify error XML structure
+    assert out.startswith("<error>")
+    assert "<message>" in out
+    assert "</message>" in out
+    assert "</error>" in out
+    assert "vm_id must be a non-negative integer" in out
+
+
+def test_manage_vm_xml_error_structure_invalid_operation(monkeypatch):
+    """Test that manage_vm returns properly structured error XML for invalid operations."""
+    manage_vm = _tool(monkeypatch)
+    
+    out = manage_vm(vm_id="1", operation="invalid_op")
+    
+    # Verify error XML structure
+    assert out.startswith("<error>")
+    assert "<message>" in out
+    assert "</message>" in out
+    assert "</error>" in out
+    assert "Invalid operation 'invalid_op'" in out
+    assert "Valid operations: start, stop, reboot, terminate" in out
+
+
+def test_manage_vm_xml_success_structure(monkeypatch):
+    """Test that manage_vm returns properly structured success XML."""
+    manage_vm = _tool(monkeypatch)
+    
+    # Use terminate operation which is valid from any state including RUNNING (state 3)
+    out = manage_vm(vm_id="42", operation="terminate", hard=True)
+    
+    # Verify success XML structure
+    assert "<result>" in out
+    assert "</result>" in out
+    assert "<vm_id>42</vm_id>" in out
+    assert "<operation>terminate</operation>" in out
+    assert "<hard>True</hard>" in out
+    assert "<message>" in out
+    assert "</message>" in out
+    assert "<command_output>" in out
+    assert "</command_output>" in out

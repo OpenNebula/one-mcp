@@ -62,7 +62,7 @@ def register_tools(mcp, allow_write):
             logger.error(f"Invalid VM ID provided: {vm_id} (must be positive integer)")
             return "<error><message>vm_id must be a positive integer</message></error>"
         
-        if int(vm_id) <= 0:
+        if int(vm_id) < 0:
             logger.error(f"Invalid VM ID provided: {vm_id} (must be positive integer)")
             return "<error><message>vm_id must be a positive integer</message></error>"
 

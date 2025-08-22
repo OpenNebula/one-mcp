@@ -1,7 +1,6 @@
 """Unit tests for vm.execute_command tool."""
 
 from src.tests.unit.conftest import register_tools
-import pytest
 
 MODULE_PATH = "src.tools.vm.vm"
 
