@@ -31,7 +31,7 @@ def test_get_vm_status_xml_error_structure(monkeypatch):
     
     # Verify error XML structure
     assert out.startswith("<error>")
-    assert "vm_id must be a positive integer" in out
+    assert "vm_id values must be non-negative integers" in out
 
 
 def test_get_vm_status_xml_success_structure(monkeypatch):
