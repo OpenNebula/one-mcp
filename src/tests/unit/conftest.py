@@ -28,7 +28,7 @@ class DummyMCP:
 # Helper to register infra tools quickly
 # ---------------------------------------------------------------------------
 
-def register_tools(monkeypatch, module_path: str, xml_out: str = "<xml/>"):
+def register_tools(monkeypatch, module_path: str, xml_out: str = "<xml/>", **register_kwargs):
     """
     Register all tools defined in *module_path* with a DummyMCP instance,
     while patching that module's ``execute_one_command`` to return *xml_out*.
@@ -45,5 +45,5 @@ def register_tools(monkeypatch, module_path: str, xml_out: str = "<xml/>"):
     monkeypatch.setattr(module, "execute_one_command",
                         lambda *a, **k: xml_out,
                         raising=True)
-    module.register_tools(dummy)
+    module.register_tools(dummy, **register_kwargs)
     return dummy.tools
