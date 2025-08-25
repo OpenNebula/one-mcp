@@ -399,7 +399,7 @@ def register_tools(mcp, allow_write):
 
         result_root = ET.Element("result")
         ET.SubElement(result_root, "vm_ip_address").text = vm_ip_address
-        ET.SubElement(result_root, "command").text = command
+        ET.SubElement(result_root, "command").text = " ".join(ssh_command_parts)
         ET.SubElement(result_root, "output").text = output
         return ET.tostring(result_root, encoding="unicode")
 

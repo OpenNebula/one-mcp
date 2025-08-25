@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Test for execute_command tool using FastMCP in-memory testing."""
+"""Integration tests for the execute_command tool using FastMCP in-memory testing."""
 
 import pytest
 from fastmcp import Client

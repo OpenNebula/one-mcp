@@ -18,14 +18,22 @@ from fastmcp import Client
 from typing import Optional
 from src.tools.utils.base import execute_one_command
 import xml.etree.ElementTree as ET
-from typing import Optional
+
+
+__all__ = [
+    "cleanup_test_vms",
+    "get_vm_ip",
+    "get_vm_id",
+    "search_for_pattern",
+    "wait_for_state",
+]
 
 
 def cleanup_test_vms():
     """Clean up any leftover test VMs from previous runs.
-    
+
     This function looks for VMs with test-related names and deletes them.
-    
+
     Test VM name patterns that will be cleaned up:
     - test_vm_*
     """
@@ -34,10 +42,10 @@ def cleanup_test_vms():
         result = execute_one_command(["onevm", "list", "--list", "ID,NAME", "--csv"])
         if "error" not in result:
             cleaned_count = 0
-            for line in result.strip().split('\n'):
-                if line and 'test_vm_' in line:
+            for line in result.strip().split("\n"):
+                if line and "test_vm_" in line:
                     try:
-                        vm_id = line.split(',')[0].strip()
+                        vm_id = line.split(",")[0].strip()
                         if vm_id.isdigit():
                             execute_one_command(["onevm", "recover", "--delete", vm_id])
                             print(f"Cleaned up leftover test VM: {vm_id}")
@@ -45,15 +53,16 @@ def cleanup_test_vms():
                     except Exception as e:
                         print(f"Warning: Failed to cleanup VM from line '{line}': {e}")
                         continue
-            
+
             if cleaned_count > 0:
                 print(f"✅ Cleaned up {cleaned_count} test VMs")
             else:
                 print("ℹ️  No test VMs found to cleanup")
-                
+
     except Exception as e:
         print(f"Warning: VM cleanup failed: {e}")
         # Don't raise - we want tests to continue even if cleanup fails
+
 
 def get_vm_ip(xml_output: str) -> Optional[str]:
     """Extract the IP address from the VM XML data.
@@ -86,6 +95,7 @@ def get_vm_ip(xml_output: str) -> Optional[str]:
         print(f"Error parsing XML to get VM IP: {e}")
     return None
 
+
 def get_vm_id(output: str) -> str:
     """Get the VM ID from the output of a command that returns an XML string
 
@@ -96,12 +106,12 @@ def get_vm_id(output: str) -> str:
         The VM ID
     """
     pattern = r"<ID>\d+</ID>"
-    vm_id = re.search(pattern, output).group(0)
+    vm_id = re.search(pattern, output).group(0)  # type: ignore[arg-type]
     vm_id = vm_id.split(">")[1].split("<")[0]
     return vm_id
 
 
-def search_for_pattern(output: str, pattern: str) -> str:
+def search_for_pattern(output: str, pattern: str) -> Optional[str]:
     """Search for a pattern in the output of a command that returns an XML string
 
     Args:
