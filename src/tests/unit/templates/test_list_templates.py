@@ -11,7 +11,7 @@ def test_list_templates_cli(monkeypatch):
         captured["cmd"] = cmd_parts
         return xml_out
 
-    tools = register_tools(monkeypatch, "src.tools.templates.templates", xml_out=xml_out)
+    tools = register_tools(monkeypatch, "src.tools.templates.templates", xml_out=xml_out, allow_write=True)
     monkeypatch.setattr(
         "src.tools.templates.templates.execute_one_command", fake, raising=True
     )

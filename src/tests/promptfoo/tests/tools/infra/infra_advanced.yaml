@@ -1,0 +1,156 @@
+# Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Advanced Infrastructure Tools Tests
+
+# create_image
+- vars:
+    input: "Create an OS image named 'ubuntu' from /tmp/ubuntu.qcow2 in datastore 100"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'create_image'
+    - type: javascript
+      value: output[0].arguments.name === 'ubuntu'
+    - type: javascript
+      value: output[0].arguments.path === '/tmp/ubuntu.qcow2'
+    - type: javascript
+      value: output[0].arguments.datastore_id === '100'
+    - type: javascript
+      value: output[0].arguments.type === 'OS'
+
+- vars:
+    input: "Create a persistent DATABLOCK image named 'data' from /tmp/data.img in datastore 101"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'create_image'
+    - type: javascript
+      value: output[0].arguments.name === 'data'
+    - type: javascript
+      value: output[0].arguments.path === '/tmp/data.img'
+    - type: javascript
+      value: output[0].arguments.datastore_id === '101'
+    - type: javascript
+      value: output[0].arguments.type === 'DATABLOCK'
+    - type: javascript
+      value: output[0].arguments.persistent === true
+
+# delete_image
+- vars:
+    input: "Delete image 10"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'delete_image'
+    - type: javascript
+      value: output[0].arguments.image_id === '10'
+
+# update_image_type
+- vars:
+    input: "Change type of image 10 to CDROM"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'update_image_type'
+    - type: javascript
+      value: output[0].arguments.image_id === '10'
+    - type: javascript
+      value: output[0].arguments.type === 'CDROM'
+
+# create_vnet
+- vars:
+    input: "Create a virtual network with template 'NAME=my-net\nBRIDGE=br0'"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'create_vnet'
+    - type: javascript
+      value: output[0].arguments.template_content.includes('NAME=my-net')
+
+# delete_vnet
+- vars:
+    input: "Delete virtual network 5"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'delete_vnet'
+    - type: javascript
+      value: output[0].arguments.vnet_id === '5'
+
+# reserve_vnet
+- vars:
+    input: "Reserve 10 addresses from vnet 5"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'reserve_vnet'
+    - type: javascript
+      value: output[0].arguments.vnet_id === '5'
+    - type: javascript
+      value: output[0].arguments.size === '10'
+
+- vars:
+    input: "Reserve 5 addresses from vnet 5 named 'my-reservation'"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'reserve_vnet'
+    - type: javascript
+      value: output[0].arguments.vnet_id === '5'
+    - type: javascript
+      value: output[0].arguments.size === '5'
+    - type: javascript
+      value: output[0].arguments.name === 'my-reservation'
+
+# enable_host
+- vars:
+    input: "Enable host 3"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'enable_host'
+    - type: javascript
+      value: output[0].arguments.host_id === '3'
+
+# disable_host
+- vars:
+    input: "Disable host 3"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'disable_host'
+    - type: javascript
+      value: output[0].arguments.host_id === '3'
+
+# host_monitoring
+- vars:
+    input: "Show monitoring info for host 3"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'host_monitoring'
+    - type: javascript
+      value: output[0].arguments.host_id === '3'

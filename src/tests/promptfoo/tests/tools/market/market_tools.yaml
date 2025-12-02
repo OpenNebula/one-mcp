@@ -1,0 +1,70 @@
+# Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Marketplace Tools Tests
+
+# list_markets
+- vars:
+    input: "List all marketplaces"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_markets'
+
+# search_market_apps
+- vars:
+    input: "Search for 'ubuntu' in the marketplace"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'search_market_apps'
+    - type: javascript
+      value: output[0].arguments.filter_str === 'ubuntu'
+
+- vars:
+    input: "List all marketplace apps"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'search_market_apps'
+
+# import_market_app
+- vars:
+    input: "Import app 5 to datastore 100 as 'my-ubuntu'"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'import_market_app'
+    - type: javascript
+      value: output[0].arguments.app_id === '5'
+    - type: javascript
+      value: output[0].arguments.datastore_id === '100'
+    - type: javascript
+      value: output[0].arguments.name === 'my-ubuntu'
+
+- vars:
+    input: "Import app 5 to datastore 100"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'import_market_app'
+    - type: javascript
+      value: output[0].arguments.app_id === '5'
+    - type: javascript
+      value: output[0].arguments.datastore_id === '100'

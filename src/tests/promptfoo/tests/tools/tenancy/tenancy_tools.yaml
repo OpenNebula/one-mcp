@@ -1,0 +1,168 @@
+# Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Tenancy Tools Tests
+
+# list_users
+- vars:
+    input: "List all users"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_users'
+
+# create_user
+- vars:
+    input: "Create user 'alice' with password 'secret123'"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'create_user'
+    - type: javascript
+      value: output[0].arguments.name === 'alice'
+    - type: javascript
+      value: output[0].arguments.password === 'secret123'
+
+- vars:
+    input: "Create public user 'bob' with password 'pass'"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'create_user'
+    - type: javascript
+      value: output[0].arguments.name === 'bob'
+    - type: javascript
+      value: output[0].arguments.password === 'pass'
+    - type: javascript
+      value: output[0].arguments.auth_driver === 'public'
+
+# update_user_quota
+- vars:
+    input: "Set quota for user 5 to 'VM=[CPU=2]'"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'update_user_quota'
+    - type: javascript
+      value: output[0].arguments.user_id === '5'
+    - type: javascript
+      value: output[0].arguments.quota_template.includes('VM=[CPU=2]')
+
+# delete_user
+- vars:
+    input: "Delete user 5"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'delete_user'
+    - type: javascript
+      value: output[0].arguments.user_id === '5'
+
+# list_groups
+- vars:
+    input: "List all groups"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_groups'
+
+# create_group
+- vars:
+    input: "Create group 'devs'"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'create_group'
+    - type: javascript
+      value: output[0].arguments.name === 'devs'
+
+# add_user_to_group
+- vars:
+    input: "Add user 5 to group 10"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'add_user_to_group'
+    - type: javascript
+      value: output[0].arguments.group_id === '10'
+    - type: javascript
+      value: output[0].arguments.user_id === '5'
+
+- vars:
+    input: "Add user 5 as admin to group 10"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'add_user_to_group'
+    - type: javascript
+      value: output[0].arguments.group_id === '10'
+    - type: javascript
+      value: output[0].arguments.user_id === '5'
+    - type: javascript
+      value: output[0].arguments.admin === true
+
+# delete_group
+- vars:
+    input: "Delete group 10"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'delete_group'
+    - type: javascript
+      value: output[0].arguments.group_id === '10'
+
+# list_acls
+- vars:
+    input: "List all ACLs"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_acls'
+
+# create_acl
+- vars:
+    input: "Create ACL for user #5 to MANAGE VM+NET/#0"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'create_acl'
+    - type: javascript
+      value: output[0].arguments.user === '#5'
+    - type: javascript
+      value: output[0].arguments.resources === 'VM+NET/#0'
+    - type: javascript
+      value: output[0].arguments.rights === 'MANAGE'
+
+# delete_acl
+- vars:
+    input: "Delete ACL 20"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'delete_acl'
+    - type: javascript
+      value: output[0].arguments.acl_id === '20'

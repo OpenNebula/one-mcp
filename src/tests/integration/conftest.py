@@ -31,7 +31,7 @@ def mcp_server():
 
     infra.register_tools(server)
     vm.register_tools(server, allow_write=True)
-    templates.register_tools(server)
+    templates.register_tools(server, allow_write=True)
     return server
 
 
@@ -44,7 +44,7 @@ def mcp_server_read_only():
 
     infra.register_tools(server)
     vm.register_tools(server, allow_write=False)
-    templates.register_tools(server)
+    templates.register_tools(server, allow_write=False)
     return server
 
 

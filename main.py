@@ -14,7 +14,7 @@
 
 from mcp.server.fastmcp import FastMCP
 from src.static import MCP_SERVER_PROMPT
-from src.tools import infra, templates, vm
+from src.tools import infra, templates, vm, oneflow, tenancy, market
 from src.logging_config import setup_logging
 import argparse
 from logging import getLogger
@@ -60,9 +60,12 @@ if __name__ == "__main__":
     allow_write = True if args.allow_write else False
 
     # Register tool modules
-    infra.register_tools(mcp)
+    infra.register_tools(mcp, allow_write)
     vm.register_tools(mcp, allow_write)
-    templates.register_tools(mcp)
+    templates.register_tools(mcp, allow_write)
+    oneflow.register_tools(mcp, allow_write)
+    tenancy.register_tools(mcp, allow_write)
+    market.register_tools(mcp, allow_write)
 
     logger.info(f"Starting MCP server - allow_write: {allow_write}")
 

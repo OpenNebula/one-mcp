@@ -1,0 +1,107 @@
+# Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# OneFlow Tools Tests
+
+# list_service_templates
+- vars:
+    input: "List all service templates"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_service_templates'
+
+# deploy_service
+- vars:
+    input: "Deploy service from template 5 named 'my-app'"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'deploy_service'
+    - type: javascript
+      value: output[0].arguments.template_id === '5'
+    - type: javascript
+      value: output[0].arguments.name === 'my-app'
+
+# list_services
+- vars:
+    input: "List all running services"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'list_services'
+
+# get_service_info
+- vars:
+    input: "Show details for service 10"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'get_service_info'
+    - type: javascript
+      value: output[0].arguments.service_id === '10'
+
+# delete_service
+- vars:
+    input: "Delete service 10"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'delete_service'
+    - type: javascript
+      value: output[0].arguments.service_id === '10'
+
+# service_action
+- vars:
+    input: "Shutdown service 10"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'service_action'
+    - type: javascript
+      value: output[0].arguments.service_id === '10'
+    - type: javascript
+      value: output[0].arguments.action === 'shutdown'
+
+# scale_service
+- vars:
+    input: "Scale role 'worker' in service 10 to 5 instances"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'scale_service'
+    - type: javascript
+      value: output[0].arguments.service_id === '10'
+    - type: javascript
+      value: output[0].arguments.role_name === 'worker'
+    - type: javascript
+      value: output[0].arguments.cardinality === '5'
+
+# recover_service
+- vars:
+    input: "Recover service 10"
+  options:
+    transform: file://../../transforms/extract_function_call.js
+  assert:
+    - type: javascript
+      value: output.length === 1 && output[0].function === 'recover_service'
+    - type: javascript
+      value: output[0].arguments.service_id === '10'

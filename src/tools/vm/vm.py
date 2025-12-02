@@ -812,3 +812,268 @@ def register_tools(mcp, allow_write):
             return (
                 f"<error><message>Failed to execute {operation}: {e}</message></error>"
             )
+
+    @mcp.tool(
+        name="vm_disk_attach",
+        description="""Attach a new disk to a running or powered-off VM.
+
+        Args:
+            vm_id: The ID of the VM.
+            image_id: ID of the image to attach.
+            size: Size in MB for a volatile disk (if no image provided).
+
+        Returns:
+            str: XML string with operation result or error message.
+        """,
+    )
+    def vm_disk_attach(
+        vm_id: str, image_id: Optional[str] = None, size: Optional[str] = None
+    ) -> str:
+        """Attach a new disk to a VM."""
+        if not allow_write:
+            logger.warning("vm_disk_attach called while allow_write=False")
+            return "<error><message>Write operations are disabled on this MCP instance.</message></error>"
+
+        if not vm_id.isdigit():
+            return (
+                "<error><message>vm_id must be a non-negative integer</message></error>"
+            )
+
+        cmd_parts = ["onevm", "disk-attach", vm_id]
+
+        if image_id:
+            if not image_id.isdigit():
+                return "<error><message>image_id must be a non-negative integer</message></error>"
+            cmd_parts.extend(["--image", image_id])
+        elif size:
+            if not size.isdigit():
+                return (
+                    "<error><message>size must be a non-negative integer</message></error>"
+                )
+            cmd_parts.extend(["--size", size])
+        else:
+            return "<error><message>Either image_id or size must be provided</message></error>"
+
+        logger.debug(f"Attaching disk to VM {vm_id}")
+        try:
+            result = execute_one_command(cmd_parts)
+            return _wrap_success_xml(vm_id, "disk-attach", False, result, False)
+        except Exception as e:
+            logger.error(f"Failed to attach disk to VM {vm_id}: {e}")
+            return f"<error><message>Failed to attach disk: {e}</message></error>"
+
+    @mcp.tool(
+        name="vm_disk_detach",
+        description="""Detach a disk from a VM.
+
+        Args:
+            vm_id: The ID of the VM.
+            disk_id: The ID of the disk to detach.
+
+        Returns:
+            str: XML string with operation result or error message.
+        """,
+    )
+    def vm_disk_detach(vm_id: str, disk_id: str) -> str:
+        """Detach a disk from a VM."""
+        if not allow_write:
+            logger.warning("vm_disk_detach called while allow_write=False")
+            return "<error><message>Write operations are disabled on this MCP instance.</message></error>"
+
+        if not vm_id.isdigit() or not disk_id.isdigit():
+            return "<error><message>vm_id and disk_id must be non-negative integers</message></error>"
+
+        cmd_parts = ["onevm", "disk-detach", vm_id, disk_id]
+
+        logger.debug(f"Detaching disk {disk_id} from VM {vm_id}")
+        try:
+            result = execute_one_command(cmd_parts)
+            return _wrap_success_xml(vm_id, "disk-detach", False, result, False)
+        except Exception as e:
+            logger.error(f"Failed to detach disk {disk_id} from VM {vm_id}: {e}")
+            return f"<error><message>Failed to detach disk: {e}</message></error>"
+
+    @mcp.tool(
+        name="vm_disk_resize",
+        description="""Resize a VM disk.
+
+        Args:
+            vm_id: The ID of the VM.
+            disk_id: The ID of the disk to resize.
+            size: The new size.
+
+        Returns:
+            str: XML string with operation result or error message.
+        """,
+    )
+    def vm_disk_resize(vm_id: str, disk_id: str, size: str) -> str:
+        """Resize a VM disk."""
+        if not allow_write:
+            logger.warning("vm_disk_resize called while allow_write=False")
+            return "<error><message>Write operations are disabled on this MCP instance.</message></error>"
+
+        if not vm_id.isdigit() or not disk_id.isdigit() or not size.isdigit():
+            return "<error><message>vm_id, disk_id and size must be non-negative integers</message></error>"
+
+        cmd_parts = ["onevm", "disk-resize", vm_id, disk_id, size]
+
+        logger.debug(f"Resizing disk {disk_id} of VM {vm_id} to {size}")
+        try:
+            result = execute_one_command(cmd_parts)
+            return _wrap_success_xml(vm_id, "disk-resize", False, result, False)
+        except Exception as e:
+            logger.error(f"Failed to resize disk {disk_id} of VM {vm_id}: {e}")
+            return f"<error><message>Failed to resize disk: {e}</message></error>"
+
+    @mcp.tool(
+        name="vm_snapshot_create",
+        description="""Create a snapshot of a VM.
+
+        Args:
+            vm_id: The ID of the VM.
+            name: The name of the snapshot.
+
+        Returns:
+            str: XML string with operation result or error message.
+        """,
+    )
+    def vm_snapshot_create(vm_id: str, name: str) -> str:
+        """Create a snapshot of a VM."""
+        if not allow_write:
+            logger.warning("vm_snapshot_create called while allow_write=False")
+            return "<error><message>Write operations are disabled on this MCP instance.</message></error>"
+
+        if not vm_id.isdigit():
+            return (
+                "<error><message>vm_id must be a non-negative integer</message></error>"
+            )
+
+        cmd_parts = ["onevm", "snapshot-create", vm_id, name]
+
+        logger.debug(f"Creating snapshot '{name}' for VM {vm_id}")
+        try:
+            result = execute_one_command(cmd_parts)
+            return _wrap_success_xml(vm_id, "snapshot-create", False, result, False)
+        except Exception as e:
+            logger.error(f"Failed to create snapshot for VM {vm_id}: {e}")
+            return f"<error><message>Failed to create snapshot: {e}</message></error>"
+
+    @mcp.tool(
+        name="vm_snapshot_revert",
+        description="""Revert a VM to a snapshot.
+
+        Args:
+            vm_id: The ID of the VM.
+            snapshot_id: The ID of the snapshot.
+
+        Returns:
+            str: XML string with operation result or error message.
+        """,
+    )
+    def vm_snapshot_revert(vm_id: str, snapshot_id: str) -> str:
+        """Revert a VM to a snapshot."""
+        if not allow_write:
+            logger.warning("vm_snapshot_revert called while allow_write=False")
+            return "<error><message>Write operations are disabled on this MCP instance.</message></error>"
+
+        if not vm_id.isdigit() or not snapshot_id.isdigit():
+            return "<error><message>vm_id and snapshot_id must be non-negative integers</message></error>"
+
+        cmd_parts = ["onevm", "snapshot-revert", vm_id, snapshot_id]
+
+        logger.debug(f"Reverting VM {vm_id} to snapshot {snapshot_id}")
+        try:
+            result = execute_one_command(cmd_parts)
+            return _wrap_success_xml(vm_id, "snapshot-revert", False, result, False)
+        except Exception as e:
+            logger.error(f"Failed to revert VM {vm_id} to snapshot {snapshot_id}: {e}")
+            return f"<error><message>Failed to revert snapshot: {e}</message></error>"
+
+    @mcp.tool(
+        name="vm_nic_attach",
+        description="""Attach a network interface to a VM.
+
+        Args:
+            vm_id: The ID of the VM.
+            network_id: The ID or name of the network to attach.
+            ip: Optional IP address to assign.
+
+        Returns:
+            str: XML string with operation result or error message.
+        """,
+    )
+    def vm_nic_attach(vm_id: str, network_id: str, ip: Optional[str] = None) -> str:
+        """Attach a network interface to a VM."""
+        if not allow_write:
+            logger.warning("vm_nic_attach called while allow_write=False")
+            return "<error><message>Write operations are disabled on this MCP instance.</message></error>"
+
+        if not vm_id.isdigit():
+            return (
+                "<error><message>vm_id must be a non-negative integer</message></error>"
+            )
+
+        cmd_parts = ["onevm", "nic-attach", vm_id, "--network", network_id]
+
+        if ip:
+            if not is_valid_ip_address(ip):
+                return "<error><message>Invalid IP address</message></error>"
+            cmd_parts.extend(["--ip", ip])
+
+        logger.debug(f"Attaching NIC to VM {vm_id} (network: {network_id})")
+        try:
+            result = execute_one_command(cmd_parts)
+            return _wrap_success_xml(vm_id, "nic-attach", False, result, False)
+        except Exception as e:
+            logger.error(f"Failed to attach NIC to VM {vm_id}: {e}")
+            return f"<error><message>Failed to attach NIC: {e}</message></error>"
+
+    @mcp.tool(
+        name="vm_nic_detach",
+        description="""Detach a network interface from a VM.
+
+        Args:
+            vm_id: The ID of the VM.
+            nic_id: The ID of the NIC to detach.
+
+        Returns:
+            str: XML string with operation result or error message.
+        """,
+    )
+    def vm_nic_detach(vm_id: str, nic_id: str) -> str:
+        """Detach a network interface from a VM."""
+        if not allow_write:
+            logger.warning("vm_nic_detach called while allow_write=False")
+            return "<error><message>Write operations are disabled on this MCP instance.</message></error>"
+
+        if not vm_id.isdigit() or not nic_id.isdigit():
+            return "<error><message>vm_id and nic_id must be non-negative integers</message></error>"
+
+        cmd_parts = ["onevm", "nic-detach", vm_id, nic_id]
+
+        logger.debug(f"Detaching NIC {nic_id} from VM {vm_id}")
+        try:
+            result = execute_one_command(cmd_parts)
+            return _wrap_success_xml(vm_id, "nic-detach", False, result, False)
+        except Exception as e:
+            logger.error(f"Failed to detach NIC {nic_id} from VM {vm_id}: {e}")
+            return f"<error><message>Failed to detach NIC: {e}</message></error>"
+
+    @mcp.tool(
+        name="get_vm_log",
+        description="Get the log of a virtual machine.",
+    )
+    def get_vm_log(vm_id: str) -> str:
+        """Get the log of a virtual machine.
+        Args:
+            vm_id: ID of the VM
+        Returns:
+            str: Log content
+        """
+        if not vm_id.isdigit():
+            return "<error><message>vm_id must be a non-negative integer</message></error>"
+
+        logger.debug(f"Getting log for VM {vm_id}")
+        # onelog get-vm <id> returns raw text log
+        return execute_one_command(["onelog", "get-vm", vm_id])
+
