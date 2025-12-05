@@ -13,6 +13,15 @@ An MCP (Model Context Protocol) server that provides AI assistants with tools to
 - **OpenNebula CLI**
 - **MCP Client** (e.g., Cursor, Windsurf, Warp Terminal, mcphost)
 
+# Testing
+[Promptfoo](https://promptfoo.dev) is used to test the MCP Server's ability to select and use the correct tools.
+
+**⚠️ Important**: Use promptfoo version 0.117.4 for compatibility with the test suite:
+
+```bash
+npx promptfoo@0.117.4 eval -c promptfooconfig.yaml
+```
+
 ## Documentation
 [Documentation for one-mcp is in the project Wiki](../../wiki/)
 
