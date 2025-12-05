@@ -37,7 +37,14 @@ def register_tools(mcp, allow_write=False):
 
     @mcp.tool(
         name="search_market_apps",
-        description="Search for appliances in the marketplace by name, description, or tags (case-insensitive).",
+        description="""List or search for appliances in the marketplace by name, description, or tags (case-insensitive).
+        
+        **IMPORTANT**: Use this tool when the user requests to "list all marketplace apps" or "show marketplace apps". 
+        The `list_markets` tool lists marketplaces (repositories), NOT the apps within them. This tool lists the actual 
+        marketplace applications/appliances.
+        
+        If no filter_str is provided, returns ALL marketplace apps. If filter_str is provided, performs a case-insensitive 
+        search in NAME, DESCRIPTION, and TAGS fields.""",
     )
     def search_market_apps(filter_str: Optional[str] = None) -> str:
         """Search for appliances in the marketplace.

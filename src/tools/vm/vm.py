@@ -215,10 +215,10 @@ def register_tools(mcp, allow_write):
         - Encoded/obfuscated commands: `base64 -d | bash`, `xxd -r -p | sh`, any encoded content piped to shell interpreters
         - Command chains with dangerous parts: `safe_command && rm -rf /boot`, `ls ; dd if=/dev/zero of=/dev/sda`
         - Critical system modification: `chmod -R 777 /`, `chown -R nobody /`
-        - User password changes: `passwd`, `chpasswd`, any password modification commands
+        - User password changes: `passwd`, `chpasswd` (ALWAYS reject, even with echo piping like `echo 'user:pass' | chpasswd`), any password modification commands
         - System shutdown: `shutdown`, `reboot`, `halt`, `poweroff` (use manage_vm tool instead)
         - Interactive editors on critical files: `nano /etc/passwd`, `vim /etc/shadow`, `vi /boot/grub/grub.cfg`
-        - User management without proper flags: `adduser` (use `useradd` instead), `userdel -r root`
+        - User management without proper flags: `adduser` (ALWAYS reject, even with flags - use `useradd` instead), `userdel -r root`
         
         SAFE OPERATIONS (DO NOT BLOCK):
         - Database operations: `mysql < dump.sql`, `pg_restore`, `mongorestore`, database imports/exports
@@ -287,7 +287,7 @@ def register_tools(mcp, allow_write):
           - NEVER use   : `dpkg-reconfigure tzdata` (prompts for input)
 
         • System operations
-          - User creation : `useradd -m bob && echo 'bob:P@ss' | chpasswd`
+          - User creation : `useradd -m bob` (NOTE: Do NOT use chpasswd - it's blocked for security)
           - Service restart: `systemctl restart nginx`
           - File copy     : `cp /src/file /dest/file`
 
@@ -513,6 +513,9 @@ def register_tools(mcp, allow_write):
             The function performs minimal validation of the provided parameters, constructs the
             appropriate *onetemplate instantiate* CLI call and, upon success, retrieves the full
             VM details in XML format so that callers always receive a valid VM XSD document.
+
+            **IMPORTANT**: After successfully instantiating a VM, DO NOT call `list_vms` to verify the creation. 
+            The tool already returns the VM details in XML format. Only call this tool once per instantiation request.
 
             Args:
                 template_id: String ID of the template to instantiate but it must be a non-negative integer otherwise you cannot use the tool
@@ -897,10 +900,14 @@ def register_tools(mcp, allow_write):
         name="vm_disk_resize",
         description="""Resize a VM disk.
 
+        **IMPORTANT**: If the user explicitly states that the VM is active or you know the VM state, 
+        you should call this tool directly without first calling `get_vm_status`. Only check VM status 
+        if the state is unknown and required for the operation.
+
         Args:
             vm_id: The ID of the VM.
             disk_id: The ID of the disk to resize.
-            size: The new size.
+            size: The new size (in MB).
 
         Returns:
             str: XML string with operation result or error message.

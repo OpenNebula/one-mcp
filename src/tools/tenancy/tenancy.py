@@ -41,7 +41,17 @@ def register_tools(mcp, allow_write=False):
 
     @mcp.tool(
         name="create_user",
-        description="Create a new user.",
+        description="""Create a new user.
+
+        **IMPORTANT**: When the user requests to create a "public user", you MUST set `auth_driver='public'`. 
+        The auth_driver parameter specifies the authentication method:
+        - 'public': Public authentication (no password required)
+        - 'core': Core authentication (default, password-based)
+        - 'ldap': LDAP authentication
+        - Other drivers as supported by OpenNebula
+        
+        If the user explicitly mentions "public user" or "public authentication", set `auth_driver='public'`.
+        """,
     )
     def create_user(
         name: str,
@@ -241,12 +251,25 @@ def register_tools(mcp, allow_write=False):
 
     @mcp.tool(
         name="create_acl",
-        description="Create a new ACL rule.",
+        description="""Create a new ACL rule.
+
+        **CRITICAL FORMAT REQUIREMENTS**:
+        - The `user` parameter MUST include the appropriate prefix when referencing IDs:
+          - User ID: Use `'#<id>'` format (e.g., `'#5'` for user ID 5, NOT just `'5'`)
+          - Group ID: Use `'@<id>'` format (e.g., `'@3'` for group ID 3)
+          - All users: Use `'*'`
+        - The `resources` parameter uses similar prefix notation (e.g., `'VM+NET/#0'` for VM and Network with ID 0)
+        - The `rights` parameter specifies permissions (e.g., `'USE+MANAGE'`, `'USE'`, `'MANAGE'`)
+        
+        **EXAMPLES**:
+        - User #5 managing VM+NET/#0: `user='#5'`, `resources='VM+NET/#0'`, `rights='MANAGE'`
+        - All users using all resources: `user='*'`, `resources='*'`, `rights='USE'`
+        """,
     )
     def create_acl(user: str, resources: str, rights: str) -> str:
         """Create a new ACL rule.
         Args:
-            user: User component (e.g., '#<id>', '@<id>', '*')
+            user: User component (e.g., '#<id>', '@<id>', '*'). **MUST include '#' prefix for user IDs**.
             resources: Resources component (e.g., 'VM+NET/#<id>')
             rights: Rights component (e.g., 'USE+MANAGE')
         Returns:

@@ -44,7 +44,11 @@ def register_tools(mcp, allow_write):
         Args:
             template_id: The ID of the template.
             content: The new template content.
-            append: If True, append to existing content instead of replacing.
+            append: If True, append to existing content instead of replacing. **DEFAULT: False** (replaces existing content).
+
+        **IMPORTANT**: The `append` parameter defaults to `False`, which means the template content will be REPLACED 
+        unless you explicitly set `append=True`. If the user requests to "update" without mentioning "append" or "add", 
+        you should use the default `append=False` to replace the content.
 
         Returns:
             str: XML string with operation result or error message.
