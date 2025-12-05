@@ -62,4 +62,12 @@ vars:
 # ---------------------------------------------------------------------------
 # Tests location
 # ---------------------------------------------------------------------------
-tests: file://tests/tools/**/*.yaml
+tests:
+  - file://tests/tools/infra/*.yaml
+  - file://tests/tools/log/*.yaml
+  - file://tests/tools/market/*.yaml
+  - file://tests/tools/oneflow/*.yaml
+  - file://tests/tools/templates/*.yaml
+  - file://tests/tools/tenancy/*.yaml
+  - file://tests/tools/vm/*.yaml
+  - file://tests/tools/tools_call.yaml
