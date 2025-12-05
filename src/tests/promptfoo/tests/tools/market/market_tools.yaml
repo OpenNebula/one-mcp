@@ -18,7 +18,7 @@
 - vars:
     input: "List all marketplaces"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'list_markets'
@@ -27,7 +27,7 @@
 - vars:
     input: "Search for 'ubuntu' in the marketplace"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'search_market_apps'
@@ -37,7 +37,7 @@
 - vars:
     input: "List all marketplace apps"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'search_market_apps'
@@ -46,7 +46,7 @@
 - vars:
     input: "Import app 5 to datastore 100 as 'my-ubuntu'"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'import_market_app'
@@ -60,7 +60,7 @@
 - vars:
     input: "Import app 5 to datastore 100"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'import_market_app'

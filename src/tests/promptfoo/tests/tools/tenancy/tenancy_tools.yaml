@@ -18,7 +18,7 @@
 - vars:
     input: "List all users"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'list_users'
@@ -27,7 +27,7 @@
 - vars:
     input: "Create user 'alice' with password 'secret123'"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'create_user'
@@ -39,7 +39,7 @@
 - vars:
     input: "Create public user 'bob' with password 'pass'"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'create_user'
@@ -54,7 +54,7 @@
 - vars:
     input: "Set quota for user 5 to 'VM=[CPU=2]'"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'update_user_quota'
@@ -67,7 +67,7 @@
 - vars:
     input: "Delete user 5"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'delete_user'
@@ -78,7 +78,7 @@
 - vars:
     input: "List all groups"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'list_groups'
@@ -87,7 +87,7 @@
 - vars:
     input: "Create group 'devs'"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'create_group'
@@ -98,7 +98,7 @@
 - vars:
     input: "Add user 5 to group 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'add_user_to_group'
@@ -110,7 +110,7 @@
 - vars:
     input: "Add user 5 as admin to group 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'add_user_to_group'
@@ -125,7 +125,7 @@
 - vars:
     input: "Delete group 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'delete_group'
@@ -136,7 +136,7 @@
 - vars:
     input: "List all ACLs"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'list_acls'
@@ -145,7 +145,7 @@
 - vars:
     input: "Create ACL for user #5 to MANAGE VM+NET/#0"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'create_acl'
@@ -160,7 +160,7 @@
 - vars:
     input: "Delete ACL 20"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'delete_acl'

@@ -18,7 +18,7 @@
 - vars:
     input: "List all service templates"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'list_service_templates'
@@ -27,7 +27,7 @@
 - vars:
     input: "Deploy service from template 5 named 'my-app'"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'deploy_service'
@@ -40,7 +40,7 @@
 - vars:
     input: "List all running services"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'list_services'
@@ -49,7 +49,7 @@
 - vars:
     input: "Show details for service 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'get_service_info'
@@ -60,7 +60,7 @@
 - vars:
     input: "Delete service 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'delete_service'
@@ -71,7 +71,7 @@
 - vars:
     input: "Shutdown service 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'service_action'
@@ -84,7 +84,7 @@
 - vars:
     input: "Scale role 'worker' in service 10 to 5 instances"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'scale_service'
@@ -99,7 +99,7 @@
 - vars:
     input: "Recover service 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'recover_service'

@@ -18,7 +18,7 @@
 - vars:
     input: "Create an OS image named 'ubuntu' from /tmp/ubuntu.qcow2 in datastore 100"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'create_image'
@@ -34,7 +34,7 @@
 - vars:
     input: "Create a persistent DATABLOCK image named 'data' from /tmp/data.img in datastore 101"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'create_image'
@@ -53,7 +53,7 @@
 - vars:
     input: "Delete image 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'delete_image'
@@ -64,7 +64,7 @@
 - vars:
     input: "Change type of image 10 to CDROM"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'update_image_type'
@@ -77,7 +77,7 @@
 - vars:
     input: "Create a virtual network with template 'NAME=my-net\nBRIDGE=br0'"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'create_vnet'
@@ -88,7 +88,7 @@
 - vars:
     input: "Delete virtual network 5"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'delete_vnet'
@@ -99,7 +99,7 @@
 - vars:
     input: "Reserve 10 addresses from vnet 5"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'reserve_vnet'
@@ -111,7 +111,7 @@
 - vars:
     input: "Reserve 5 addresses from vnet 5 named 'my-reservation'"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'reserve_vnet'
@@ -126,7 +126,7 @@
 - vars:
     input: "Enable host 3"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'enable_host'
@@ -137,7 +137,7 @@
 - vars:
     input: "Disable host 3"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'disable_host'
@@ -148,7 +148,7 @@
 - vars:
     input: "Show monitoring info for host 3"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'host_monitoring'

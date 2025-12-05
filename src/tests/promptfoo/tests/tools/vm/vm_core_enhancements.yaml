@@ -18,7 +18,7 @@
 - vars:
     input: "Attach disk with image 5 to VM 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'vm_disk_attach'
@@ -30,7 +30,7 @@
 - vars:
     input: "Attach a 1024MB volatile disk to VM 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'vm_disk_attach'
@@ -43,7 +43,7 @@
 - vars:
     input: "Detach disk 1 from VM 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'vm_disk_detach'
@@ -56,7 +56,7 @@
 - vars:
     input: "Resize disk 1 on VM 10 to 2048MB"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'vm_disk_resize'
@@ -71,7 +71,7 @@
 - vars:
     input: "Create a snapshot named 'backup' for VM 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'vm_snapshot_create'
@@ -84,7 +84,7 @@
 - vars:
     input: "Revert VM 10 to snapshot 1"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'vm_snapshot_revert'
@@ -97,7 +97,7 @@
 - vars:
     input: "Attach network 'net1' to VM 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'vm_nic_attach'
@@ -109,7 +109,7 @@
 - vars:
     input: "Attach network 'net1' to VM 10 with IP 192.168.1.10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'vm_nic_attach'
@@ -124,7 +124,7 @@
 - vars:
     input: "Detach NIC 1 from VM 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'vm_nic_detach'

@@ -18,7 +18,7 @@
 - vars:
     input: "Get log for VM 10"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'get_vm_log'
@@ -29,7 +29,7 @@
 - vars:
     input: "Show log for service 5"
   options:
-    transform: file://../../transforms/extract_function_call.js
+    transform: file://transforms/extract_function_call.js
   assert:
     - type: javascript
       value: output.length === 1 && output[0].function === 'get_service_log'
