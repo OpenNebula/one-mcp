@@ -45,3 +45,7 @@ Unless required by applicable law or agreed to in writing, software distributed 
 ## Author Information
 
 Copyright 2002-2025, OpenNebula Project, OpenNebula Systems
+
+## Acknowledgements
+
+Some of the software features included in this repository have been made possible through the funding of the following innovation projects: [ONEnextgen](http://onenextgen.eu/).
